@@ -4,11 +4,11 @@ const state = {
   dragging: null,
   expandedQuestions: new Set(),
   manualPoints: [],
+  geojsonFeatureCount: 0,
 };
 
 const GENERAL_MONITORING_NODE_ID = "q3-general-monitoring";
 const questionOrder = { q1: 1, q2: 2, q3: 3, q4: 4, q5: 5, q6: 6 };
-const baseCredits = 300;
 const canvas = document.getElementById("flow-canvas");
 const svg = document.getElementById("flow-lines");
 const connectionList = document.getElementById("connection-list");
@@ -22,6 +22,15 @@ const q5Profile = document.getElementById("q5-profile");
 const q6Profile = document.getElementById("q6-profile");
 const creditTotal = document.getElementById("credit-total");
 const calcDetails = document.getElementById("calc-details");
+const calcAoiKm2 = document.getElementById("calc-aoi-km2");
+const calcPackagePriceKm2 = document.getElementById("calc-package-price-km2");
+const calcObservationsYear = document.getElementById("calc-observations-year");
+const calcPcMultiplier = document.getElementById("calc-pc-multiplier");
+const calcBaseSubscription = document.getElementById("calc-base-subscription");
+const calcCreditConsumption = document.getElementById("calc-credit-consumption");
+const calcActivationFees = document.getElementById("calc-activation-fees");
+const calcUsdAnnual = document.getElementById("calc-usd-annual");
+const calcUsdMonthly = document.getElementById("calc-usd-monthly");
 const manualEntryPanel = document.getElementById("manual-entry-panel");
 const geojsonUploadPanel = document.getElementById("geojson-upload-panel");
 const manualMap = document.getElementById("manual-map");
@@ -419,32 +428,90 @@ function updateSystemCalculations() {
   q5Profile.textContent = combineUnique(q5Cards.map((card) => card.dataset.summary));
   q6Profile.textContent = combineUnique(q6Cards.map((card) => card.dataset.summary));
 
-  const q1Multiplier = averageMultiplier(q1Cards);
-  const q2Multiplier = averageMultiplier(q2Cards);
-  const q3Multiplier = averageMultiplier(q3Cards);
-  const q4Multiplier = averageMultiplier(q4Cards);
-  const q5Multiplier = averageMultiplier(q5Cards);
-  const q6Multiplier = averageMultiplier(q6Cards);
-  const connectionMultiplier = 1 + state.edges.length * 0.1;
-  const total = Math.round(
-    baseCredits *
-      q1Multiplier *
-      q2Multiplier *
-      q3Multiplier *
-      q4Multiplier *
-      q5Multiplier *
-      q6Multiplier *
-      connectionMultiplier,
-  );
+  const totalAoiKm2 = resolveTotalAoiKm2();
+  const packageAnnualPricePerKm2 = averageByDataset(q1Cards, "packagePriceKm2", 0);
+  const observationsPerYear = averageByDataset(q1Cards, "obsPerYear", 0);
+  const pcActionMultiplier = resolveLatencyPcMultiplier(q5Cards);
+  const hasReservedAccess = q1Cards.some((card) => card.dataset.accessMode === "reserved");
 
-  creditTotal.textContent = Number.isFinite(total) ? total.toLocaleString() : "0";
-  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Q3 ${q3Multiplier.toFixed(2)} × Q4 ${q4Multiplier.toFixed(2)} × Q5 ${q5Multiplier.toFixed(2)} × Q6 ${q6Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
+  const baseSubscriptionCredits = totalAoiKm2 * packageAnnualPricePerKm2;
+  const creditConsumptionCredits = totalAoiKm2 * observationsPerYear * pcActionMultiplier;
+  const dataActivationPlatformFees = hasReservedAccess ? 0 : totalAoiKm2 * 2.5;
+  const totalEstimatedCredits = baseSubscriptionCredits + creditConsumptionCredits + dataActivationPlatformFees;
+
+  if (calcAoiKm2) calcAoiKm2.textContent = formatDecimal(totalAoiKm2, 2);
+  if (calcPackagePriceKm2) calcPackagePriceKm2.textContent = formatDecimal(packageAnnualPricePerKm2, 2);
+  if (calcObservationsYear) calcObservationsYear.textContent = formatDecimal(observationsPerYear, 0);
+  if (calcPcMultiplier) calcPcMultiplier.textContent = formatDecimal(pcActionMultiplier, 2);
+  if (calcBaseSubscription) calcBaseSubscription.textContent = formatCredits(baseSubscriptionCredits);
+  if (calcCreditConsumption) calcCreditConsumption.textContent = formatCredits(creditConsumptionCredits);
+  if (calcActivationFees) calcActivationFees.textContent = formatCredits(dataActivationPlatformFees);
+
+  const roundedTotalCredits = Math.round(totalEstimatedCredits);
+  creditTotal.textContent = Number.isFinite(roundedTotalCredits) ? roundedTotalCredits.toLocaleString() : "0";
+
+  const annualUsd = totalEstimatedCredits * 0.015;
+  const monthlyUsd = totalEstimatedCredits * 0.01;
+  if (calcUsdAnnual) calcUsdAnnual.textContent = formatCurrency(annualUsd);
+  if (calcUsdMonthly) calcUsdMonthly.textContent = formatCurrency(monthlyUsd);
+
+  const reservedNote = hasReservedAccess ? " Access Reserved active: Data Activation platform fees set to 0 PC." : "";
+  calcDetails.textContent =
+    "Total cost = Base Subscription + Planet Credit Consumption." +
+    " USD conversion uses Total Estimated Credits × $0.015 (Annual) or × $0.01 (Monthly)." +
+    reservedNote;
 }
 
-function averageMultiplier(cardsSubset) {
-  if (cardsSubset.length === 0) return 1;
-  const sum = cardsSubset.reduce((acc, card) => acc + Number(card.dataset.multiplier || 1), 0);
+function averageByDataset(cardsSubset, datasetKey, fallbackValue = 0) {
+  if (cardsSubset.length === 0) return fallbackValue;
+  const sum = cardsSubset.reduce((acc, card) => acc + Number(card.dataset[datasetKey] || fallbackValue), 0);
   return sum / cardsSubset.length;
+}
+
+function resolveLatencyPcMultiplier(q5Cards) {
+  if (q5Cards.length === 0) return 1;
+
+  const multipliers = q5Cards.map((card) => {
+    const freshness = card.dataset.freshness || "";
+    if (freshness === ">30 Days") return 0.65;
+    if (freshness === "6-30 Days") return 1.0;
+    if (freshness === "1-5 Days") return 1.35;
+    if (freshness === "Next Day") return 1.75;
+    if (freshness === "Same Day") return 2.2;
+    return Number(card.dataset.multiplier || 1);
+  });
+
+  return Math.max(...multipliers);
+}
+
+function resolveTotalAoiKm2() {
+  const mode = resolveActiveAreaInputMode();
+  if (mode === "manual") {
+    if (state.manualPoints.length === 0) return 50;
+    return state.manualPoints.length * 25;
+  }
+
+  if (mode === "geojson") {
+    if (state.geojsonFeatureCount <= 0) return 80;
+    return state.geojsonFeatureCount * 40;
+  }
+
+  return 0;
+}
+
+function formatCredits(value) {
+  if (!Number.isFinite(value)) return "0";
+  return Math.round(value).toLocaleString();
+}
+
+function formatDecimal(value, digits = 2) {
+  if (!Number.isFinite(value)) return "0";
+  return Number(value).toFixed(digits);
+}
+
+function formatCurrency(value) {
+  if (!Number.isFinite(value)) return "$0.00";
+  return `$${value.toFixed(2)}`;
 }
 
 function combineUnique(items) {
@@ -462,6 +529,7 @@ function clearAll() {
   state.dragging = null;
   state.expandedQuestions.clear();
   state.manualPoints = [];
+  state.geojsonFeatureCount = 0;
   if (geojsonFileInput) {
     geojsonFileInput.value = "";
   }
@@ -630,6 +698,7 @@ function onManualMapClick(event) {
   if (manualMapSummary) {
     manualMapSummary.textContent = `${state.manualPoints.length} AOI point(s) marked.`;
   }
+  updateSystemCalculations();
 }
 
 function renderManualMapMarkers() {
@@ -650,7 +719,9 @@ function onGeoJsonFileChange(event) {
   if (!geojsonFileSummary) return;
 
   if (!file) {
+    state.geojsonFeatureCount = 0;
     geojsonFileSummary.textContent = "No file selected.";
+    updateSystemCalculations();
     return;
   }
 
@@ -659,13 +730,18 @@ function onGeoJsonFileChange(event) {
     try {
       const parsed = JSON.parse(String(reader.result || "{}"));
       const featureCount = Array.isArray(parsed.features) ? parsed.features.length : 0;
+      state.geojsonFeatureCount = featureCount;
       geojsonFileSummary.textContent = `${file.name} loaded (${featureCount} feature${featureCount === 1 ? "" : "s"}).`;
     } catch {
+      state.geojsonFeatureCount = 0;
       geojsonFileSummary.textContent = `${file.name} selected (unable to parse as valid GeoJSON).`;
     }
+    updateSystemCalculations();
   };
   reader.onerror = () => {
+    state.geojsonFeatureCount = 0;
     geojsonFileSummary.textContent = `${file.name} selected (failed to read file).`;
+    updateSystemCalculations();
   };
   reader.readAsText(file);
 }

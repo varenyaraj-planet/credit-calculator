@@ -106,6 +106,26 @@ body {
   color: #b2c0d9;
 }
 
+.calc-breakdown {
+  display: grid;
+  gap: 6px;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  color: #c5d3eb;
+  font-size: 0.86rem;
+}
+
+.calc-row strong {
+  color: #f1f6ff;
+  font-weight: 700;
+  text-align: right;
+}
+
 .connection-list {
   margin: 0;
   padding-left: 18px;
