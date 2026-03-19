@@ -11,6 +11,11 @@ const connectionListEl = document.getElementById("connection-list");
 const decisionOutputEl = document.getElementById("decision-output");
 const evaluateButton = document.getElementById("evaluate-button");
 const resetButton = document.getElementById("reset-button");
+const homeView = document.getElementById("home-view");
+const dataflowView = document.getElementById("dataflow-view");
+const navLinks = Array.from(document.querySelectorAll("[data-route-link]"));
+const goToDataflowButton = document.getElementById("go-to-dataflow");
+const backToHomeButton = document.getElementById("back-to-home");
 const nodeElements = Array.from(document.querySelectorAll(".answer-node"));
 const nodeMap = new Map(nodeElements.map((node) => [node.dataset.nodeId, node]));
 
@@ -21,6 +26,45 @@ nodeElements.forEach((node) => {
 evaluateButton.addEventListener("click", evaluateDecisionFlow);
 resetButton.addEventListener("click", resetFlow);
 window.addEventListener("resize", drawAllConnections);
+window.addEventListener("hashchange", onHashRouteChange);
+
+navLinks.forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    setRoute(link.dataset.routeLink, true);
+  });
+});
+
+goToDataflowButton.addEventListener("click", () => setRoute("dataflow", true));
+backToHomeButton.addEventListener("click", () => setRoute("home", true));
+
+function normalizeRoute(route) {
+  return route === "dataflow" ? "dataflow" : "home";
+}
+
+function onHashRouteChange() {
+  setRoute(normalizeRoute(window.location.hash.replace("#", "")), false);
+}
+
+function setRoute(route, updateHash) {
+  const normalizedRoute = normalizeRoute(route);
+  const isHomeRoute = normalizedRoute === "home";
+
+  homeView.hidden = !isHomeRoute;
+  dataflowView.hidden = isHomeRoute;
+
+  navLinks.forEach((link) => {
+    link.classList.toggle("active", link.dataset.routeLink === normalizedRoute);
+  });
+
+  if (updateHash && window.location.hash !== `#${normalizedRoute}`) {
+    window.location.hash = normalizedRoute;
+  }
+
+  if (!isHomeRoute) {
+    requestAnimationFrame(drawAllConnections);
+  }
+}
 
 function onNodeClick(node) {
   const { nodeId, questionId } = node.dataset;
@@ -110,6 +154,8 @@ function renderConnectionList() {
 }
 
 function drawAllConnections() {
+  if (dataflowView.hidden) return;
+
   const canvasRect = canvas.getBoundingClientRect();
   svg.setAttribute("viewBox", `0 0 ${canvasRect.width} ${canvasRect.height}`);
   svg.innerHTML = "";
@@ -213,4 +259,5 @@ function capitalize(value) {
 updateSelectedSource();
 renderConnectionList();
 refreshNodeState();
+setRoute(normalizeRoute(window.location.hash.replace("#", "")), false);
 drawAllConnections();
