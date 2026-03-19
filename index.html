@@ -9,7 +9,6 @@
   <body>
     <header class="page-header">
       <h1>Planet Credit Calculator</h1>
-      <p>Configure answers and connect them in a dataflow graph.</p>
     </header>
 
     <div class="app-layout">
@@ -17,7 +16,7 @@
         <h2>System Calculations</h2>
 
         <section class="panel-card">
-          <p class="panel-label">Selected Question 1 Modes</p>
+          <p class="panel-label">Selected Primary Modes</p>
           <p id="q1-profile" class="panel-value">None</p>
         </section>
 
@@ -44,16 +43,14 @@
 
       <main class="canvas-panel">
         <section class="canvas-header">
-          <h2>Main Canvas</h2>
-          <p>Multi-select cards and drag output dots to input dots to create links.</p>
+          <h2>Decision Flow Workspace</h2>
         </section>
 
         <section class="flow-canvas" id="flow-canvas">
           <svg id="flow-lines" aria-hidden="true"></svg>
 
           <article class="question-block">
-            <h3>Question 1: What would you want to do?</h3>
-            <p class="hint">UI Component: Card with multiple selection possible</p>
+            <h3>What would you want to do?</h3>
 
             <div class="card-grid">
               <button
@@ -150,10 +147,9 @@
 
           <article class="question-block">
             <h3>
-              Question 2: Are you planning to perform only visual analysis, or remote sensing methods requiring
-              multi-spectral data?
+              Are you planning to perform only visual analysis, or remote sensing methods requiring multi-spectral
+              data?
             </h3>
-            <p class="hint">UI Component: Card with multiple selection possible</p>
 
             <div class="card-grid q2-grid">
               <button
