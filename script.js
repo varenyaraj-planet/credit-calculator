@@ -2,6 +2,7 @@ const state = {
   selectedNodes: new Set(),
   edges: [],
   dragging: null,
+  expandedQuestions: new Set(),
 };
 
 const GENERAL_MONITORING_NODE_ID = "q3-general-monitoring";
@@ -21,6 +22,7 @@ const creditTotal = document.getElementById("credit-total");
 const calcDetails = document.getElementById("calc-details");
 const cards = Array.from(document.querySelectorAll(".answer-card"));
 const outputHandles = Array.from(document.querySelectorAll(".output-handle"));
+const questionBlocks = Array.from(document.querySelectorAll(".question-block[data-question-id]"));
 const cardMap = new Map(cards.map((card) => [card.dataset.nodeId, card]));
 
 cards.forEach((card) => {
@@ -29,6 +31,13 @@ cards.forEach((card) => {
 
 outputHandles.forEach((handle) => {
   handle.addEventListener("pointerdown", startDragConnection);
+});
+
+questionBlocks.forEach((block) => {
+  const questionId = block.dataset.questionId;
+  const title = block.querySelector(".question-title");
+  if (!title || !questionId) return;
+  title.addEventListener("click", () => onQuestionTitleClick(questionId));
 });
 
 clearButton.addEventListener("click", clearAll);
@@ -42,8 +51,26 @@ function toggleCard(nodeId) {
   }
 
   syncConditionalQuestionState();
+  applyQuestionAnswerVisibility();
   refreshCardState();
   updateSystemCalculations();
+  drawConnections();
+}
+
+function onQuestionTitleClick(questionId) {
+  const selectedCount = cards.filter(
+    (card) => card.dataset.questionId === questionId && state.selectedNodes.has(card.dataset.nodeId),
+  ).length;
+  if (selectedCount === 0) return;
+
+  if (state.expandedQuestions.has(questionId)) {
+    state.expandedQuestions.delete(questionId);
+  } else {
+    state.expandedQuestions.add(questionId);
+  }
+
+  applyQuestionAnswerVisibility();
+  refreshCardState();
   drawConnections();
 }
 
@@ -138,6 +165,7 @@ function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
   if (!targetCard) {
     state.edges.splice(edgeIndex, 1);
     syncConditionalQuestionState();
+    applyQuestionAnswerVisibility();
     renderConnectionList();
     return;
   }
@@ -154,6 +182,7 @@ function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
   }
 
   syncConditionalQuestionState();
+  applyQuestionAnswerVisibility();
   renderConnectionList();
 }
 
@@ -192,12 +221,14 @@ function addEdge(from, to) {
   if (exists) return;
   state.edges.push({ from, to });
   syncConditionalQuestionState();
+  applyQuestionAnswerVisibility();
   renderConnectionList();
 }
 
 function removeEdge(index) {
   state.edges.splice(index, 1);
   syncConditionalQuestionState();
+  applyQuestionAnswerVisibility();
   renderConnectionList();
   refreshCardState();
   drawConnections();
@@ -354,7 +385,9 @@ function clearAll() {
   state.selectedNodes.clear();
   state.edges = [];
   state.dragging = null;
+  state.expandedQuestions.clear();
   syncConditionalQuestionState();
+  applyQuestionAnswerVisibility();
   clearDropHighlights();
   renderConnectionList();
   refreshCardState();
@@ -366,6 +399,9 @@ function syncConditionalQuestionState() {
   const shouldShowQ4 = hasRequiredGeneralMonitoringLink();
   if (q4Block) {
     q4Block.hidden = !shouldShowQ4;
+  }
+  if (!shouldShowQ4) {
+    state.expandedQuestions.delete("q4");
   }
 
   if (shouldShowQ4) return;
@@ -402,11 +438,46 @@ function hasRequiredGeneralMonitoringLink() {
   });
 }
 
+function applyQuestionAnswerVisibility() {
+  questionBlocks.forEach((block) => {
+    const questionId = block.dataset.questionId;
+    if (!questionId) return;
+
+    const blockCards = Array.from(block.querySelectorAll(".answer-card"));
+    if (block.hidden) {
+      blockCards.forEach((card) => {
+        card.hidden = false;
+      });
+      state.expandedQuestions.delete(questionId);
+      block.classList.remove("answered", "collapsed");
+      return;
+    }
+
+    const selectedCount = blockCards.filter((card) => state.selectedNodes.has(card.dataset.nodeId)).length;
+    if (selectedCount === 0) {
+      state.expandedQuestions.delete(questionId);
+    }
+
+    const isAnswered = selectedCount > 0;
+    const isExpanded = state.expandedQuestions.has(questionId);
+    const shouldCollapse = isAnswered && !isExpanded;
+
+    block.classList.toggle("answered", isAnswered);
+    block.classList.toggle("collapsed", shouldCollapse);
+
+    blockCards.forEach((card) => {
+      const isSelected = state.selectedNodes.has(card.dataset.nodeId);
+      card.hidden = shouldCollapse && !isSelected;
+    });
+  });
+}
+
 function isCardVisible(card) {
   return !card.closest("[hidden]");
 }
 
 syncConditionalQuestionState();
+applyQuestionAnswerVisibility();
 renderConnectionList();
 refreshCardState();
 drawConnections();
