@@ -26,7 +26,7 @@ const questionBlocks = Array.from(document.querySelectorAll(".question-block[dat
 const cardMap = new Map(cards.map((card) => [card.dataset.nodeId, card]));
 
 cards.forEach((card) => {
-  card.addEventListener("click", () => toggleCard(card.dataset.nodeId));
+  card.addEventListener("click", () => onCardClick(card));
 });
 
 outputHandles.forEach((handle) => {
@@ -55,6 +55,32 @@ function toggleCard(nodeId) {
   refreshCardState();
   updateSystemCalculations();
   drawConnections();
+}
+
+function onCardClick(card) {
+  if (shouldExpandOnAnsweredCardClick(card)) {
+    const questionId = card.dataset.questionId;
+    if (questionId) {
+      state.expandedQuestions.add(questionId);
+      applyQuestionAnswerVisibility();
+      refreshCardState();
+      drawConnections();
+    }
+    return;
+  }
+
+  toggleCard(card.dataset.nodeId);
+}
+
+function shouldExpandOnAnsweredCardClick(card) {
+  const block = card.closest(".question-block");
+  if (!block || !block.classList.contains("collapsed")) return false;
+
+  const questionId = block.dataset.questionId;
+  if (!questionId) return false;
+
+  const chosenIds = getChosenNodeIdsForQuestion(questionId);
+  return chosenIds.has(card.dataset.nodeId);
 }
 
 function onQuestionTitleClick(questionId) {
@@ -161,6 +187,7 @@ function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
   if (!edge || edge.from !== fromNodeId) return;
 
   if (!targetCard) {
+    expandQuestionsForEdge(edge);
     state.edges.splice(edgeIndex, 1);
     syncConditionalQuestionState();
     applyQuestionAnswerVisibility();
@@ -174,6 +201,7 @@ function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
   });
 
   if (duplicate) {
+    expandQuestionsForEdge(edge);
     state.edges.splice(edgeIndex, 1);
   } else {
     edge.to = nextToNodeId;
@@ -224,6 +252,10 @@ function addEdge(from, to) {
 }
 
 function removeEdge(index) {
+  const edge = state.edges[index];
+  if (edge) {
+    expandQuestionsForEdge(edge);
+  }
   state.edges.splice(index, 1);
   syncConditionalQuestionState();
   applyQuestionAnswerVisibility();
@@ -499,6 +531,16 @@ function getChosenNodeIdsForQuestion(questionId) {
   });
 
   return chosenIds;
+}
+
+function expandQuestionsForEdge(edge) {
+  if (!edge) return;
+  [edge.from, edge.to].forEach((nodeId) => {
+    const questionId = cardMap.get(nodeId)?.dataset.questionId;
+    if (questionId) {
+      state.expandedQuestions.add(questionId);
+    }
+  });
 }
 
 function isCardVisible(card) {
