@@ -7,10 +7,195 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="starter-shell">
+    <header class="page-header">
       <h1>Planet Credit Calculator</h1>
-      <p>Fresh start scaffold. Build your new interface here.</p>
-    </main>
+      <p>Configure answers and connect them in a dataflow graph.</p>
+    </header>
+
+    <div class="app-layout">
+      <aside class="calc-panel">
+        <h2>System Calculations</h2>
+
+        <section class="panel-card">
+          <p class="panel-label">Selected Question 1 Modes</p>
+          <p id="q1-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card">
+          <p class="panel-label">Selected Question 2 Modes</p>
+          <p id="q2-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card">
+          <p class="panel-label">Connections</p>
+          <ul id="connection-list" class="connection-list">
+            <li class="muted">No connections yet.</li>
+          </ul>
+        </section>
+
+        <section class="panel-card">
+          <p class="panel-label">Estimated Planet Credits</p>
+          <p id="credit-total" class="credit-total">0</p>
+          <small id="calc-details" class="calc-details">Select cards and connect Q1 to Q2.</small>
+        </section>
+
+        <button id="clear-button" class="clear-button">Clear selections & links</button>
+      </aside>
+
+      <main class="canvas-panel">
+        <section class="canvas-header">
+          <h2>Main Canvas</h2>
+          <p>Multi-select cards and drag output dots to input dots to create links.</p>
+        </section>
+
+        <section class="flow-canvas" id="flow-canvas">
+          <svg id="flow-lines" aria-hidden="true"></svg>
+
+          <article class="question-block">
+            <h3>Question 1: What would you want to do?</h3>
+            <p class="hint">UI Component: Card with multiple selection possible</p>
+
+            <div class="card-grid">
+              <button
+                class="answer-card"
+                data-node-id="q1-sporadic"
+                data-question-id="q1"
+                data-label="Sporadically monitor different places"
+                data-summary="Global Roaming (Flexible Access)"
+                data-frequency="Flexible"
+                data-multiplier="1.2"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q1-A1</span>
+                <span class="card-copy">
+                  <strong>Sporadically monitor different places</strong>
+                  <small>Sets: Global Roaming (Flexible Access).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-event"
+                data-question-id="q1"
+                data-label="Check only a few images (Event)"
+                data-summary="Fixed AOI, Low Frequency (Hybrid lean)"
+                data-frequency="Low"
+                data-multiplier="1.05"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q1-A2</span>
+                <span class="card-copy">
+                  <strong>Check only a few images (Event)</strong>
+                  <small>Sets: Fixed AOI, Low Frequency (Hybrid lean).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-monthly"
+                data-question-id="q1"
+                data-label="Regular insights (Monthly-ish)"
+                data-summary="Fixed AOI, Medium Frequency"
+                data-frequency="Medium"
+                data-multiplier="1.3"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q1-A3</span>
+                <span class="card-copy">
+                  <strong>Regular insights (Monthly-ish)</strong>
+                  <small>Sets: Fixed AOI, Medium Frequency.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-daily"
+                data-question-id="q1"
+                data-label="Daily monitoring"
+                data-summary="Fixed AOI, High Frequency (Reserved lean)"
+                data-frequency="High"
+                data-multiplier="1.65"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q1-A4</span>
+                <span class="card-copy">
+                  <strong>Daily monitoring</strong>
+                  <small>Sets: Fixed AOI, High Frequency (Reserved lean).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-custom"
+                data-question-id="q1"
+                data-label="Other (Custom)"
+                data-summary="Fixed AOI, Custom Frequency"
+                data-frequency="Custom"
+                data-multiplier="1.4"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q1-A5</span>
+                <span class="card-copy">
+                  <strong>Other (Custom)</strong>
+                  <small>Sets: Fixed AOI, prompts for custom frequency.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block">
+            <h3>
+              Question 2: Are you planning to perform only visual analysis, or remote sensing methods requiring
+              multi-spectral data?
+            </h3>
+            <p class="hint">UI Component: Card with multiple selection possible</p>
+
+            <div class="card-grid q2-grid">
+              <button
+                class="answer-card"
+                data-node-id="q2-visual"
+                data-question-id="q2"
+                data-label="Visual analysis only"
+                data-summary="Basic visual inspection and interpretation"
+                data-analysis="Visual"
+                data-multiplier="1.0"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q2-A1</span>
+                <span class="card-copy">
+                  <strong>Visual analysis only</strong>
+                  <small>Basic visual inspection and interpretation.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q2-multi"
+                data-question-id="q2"
+                data-label="Multi-spectral remote sensing"
+                data-summary="Advanced analysis with spectral bands (NDVI, change detection, etc.)"
+                data-analysis="Multi-spectral"
+                data-multiplier="1.75"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q2-A2</span>
+                <span class="card-copy">
+                  <strong>Multi-spectral remote sensing</strong>
+                  <small>Advanced analysis requiring spectral bands (NDVI, change detection, etc.).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>
