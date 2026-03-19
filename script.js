@@ -128,11 +128,13 @@ function addEdge(from, to) {
   const exists = state.edges.some((edge) => edge.from === from && edge.to === to);
   if (exists) return;
   state.edges.push({ from, to });
+  syncConditionalQuestionState();
   renderConnectionList();
 }
 
 function removeEdge(index) {
   state.edges.splice(index, 1);
+  syncConditionalQuestionState();
   renderConnectionList();
   refreshCardState();
   drawConnections();
@@ -282,7 +284,7 @@ function clearAll() {
 }
 
 function syncConditionalQuestionState() {
-  const shouldShowQ4 = state.selectedNodes.has(GENERAL_MONITORING_NODE_ID);
+  const shouldShowQ4 = hasRequiredGeneralMonitoringLink();
   if (q4Block) {
     q4Block.hidden = !shouldShowQ4;
   }
@@ -304,6 +306,21 @@ function syncConditionalQuestionState() {
   }
 
   renderConnectionList();
+}
+
+function hasRequiredGeneralMonitoringLink() {
+  const targetCard = cardMap.get(GENERAL_MONITORING_NODE_ID);
+  if (!targetCard) return false;
+
+  const targetQuestionOrder = questionOrder[targetCard.dataset.questionId];
+  if (!targetQuestionOrder) return false;
+
+  return state.edges.some((edge) => {
+    if (edge.to !== GENERAL_MONITORING_NODE_ID) return false;
+    const sourceCard = cardMap.get(edge.from);
+    if (!sourceCard) return false;
+    return questionOrder[sourceCard.dataset.questionId] === targetQuestionOrder - 1;
+  });
 }
 
 function isCardVisible(card) {
