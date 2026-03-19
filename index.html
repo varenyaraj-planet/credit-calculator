@@ -31,6 +31,11 @@
         </section>
 
         <section class="panel-card">
+          <p class="panel-label">End Customer</p>
+          <p id="q4-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card">
           <p class="panel-label">Connections</p>
           <ul id="connection-list" class="connection-list">
             <li class="muted">No connections yet.</li>
@@ -273,6 +278,46 @@
                     For individual, daily scenes of specific commercial or government sites - Routes to
                     Hybrid/Reserved.
                   </small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block" id="q4-block" hidden>
+            <h3>Who is the end customer?</h3>
+
+            <div class="card-grid q2-grid">
+              <button
+                class="answer-card"
+                data-node-id="q4-government"
+                data-question-id="q4"
+                data-label="Government"
+                data-summary="Government"
+                data-customer-type="Government"
+                data-multiplier="1.18"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q4-A1</span>
+                <span class="card-copy">
+                  <strong>Government</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q4-commercial"
+                data-question-id="q4"
+                data-label="Commercial"
+                data-summary="Commercial"
+                data-customer-type="Commercial"
+                data-multiplier="1.08"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q4-A2</span>
+                <span class="card-copy">
+                  <strong>Commercial</strong>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
