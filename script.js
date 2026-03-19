@@ -411,15 +411,12 @@ function refreshCardState() {
 }
 
 function updateSystemCalculations() {
-  const selectedCards = Array.from(state.selectedNodes)
-    .map((nodeId) => cardMap.get(nodeId))
-    .filter(Boolean);
-  const q1Cards = selectedCards.filter((card) => card.dataset.questionId === "q1");
-  const q2Cards = selectedCards.filter((card) => card.dataset.questionId === "q2");
-  const q3Cards = selectedCards.filter((card) => card.dataset.questionId === "q3");
-  const q4Cards = selectedCards.filter((card) => card.dataset.questionId === "q4");
-  const q5Cards = selectedCards.filter((card) => card.dataset.questionId === "q5");
-  const q6Cards = selectedCards.filter((card) => card.dataset.questionId === "q6");
+  const q1Cards = getChosenCardsForQuestion("q1");
+  const q2Cards = getChosenCardsForQuestion("q2");
+  const q3Cards = getChosenCardsForQuestion("q3");
+  const q4Cards = getChosenCardsForQuestion("q4");
+  const q5Cards = getChosenCardsForQuestion("q5");
+  const q6Cards = getChosenCardsForQuestion("q6");
 
   q1Profile.textContent = combineUnique(q1Cards.map((card) => card.dataset.summary));
   q2Profile.textContent = combineUnique(q2Cards.map((card) => card.dataset.summary));
@@ -458,6 +455,7 @@ function updateSystemCalculations() {
   const reservedNote = hasReservedAccess ? " Access Reserved active: Data Activation platform fees set to 0 PC." : "";
   calcDetails.textContent =
     "Total cost = Base Subscription + Planet Credit Consumption." +
+    " Updates live while selections and connections change." +
     " USD conversion uses Total Estimated Credits × $0.015 (Annual) or × $0.01 (Monthly)." +
     reservedNote;
 }
@@ -656,6 +654,12 @@ function getChosenNodeIdsForQuestion(questionId) {
   });
 
   return chosenIds;
+}
+
+function getChosenCardsForQuestion(questionId) {
+  return Array.from(getChosenNodeIdsForQuestion(questionId))
+    .map((nodeId) => cardMap.get(nodeId))
+    .filter(Boolean);
 }
 
 function updateAreaInputModeUI() {
