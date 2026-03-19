@@ -5,7 +5,7 @@ const state = {
 };
 
 const GENERAL_MONITORING_NODE_ID = "q3-general-monitoring";
-const questionOrder = { q1: 1, q2: 2, q3: 3, q4: 4 };
+const questionOrder = { q1: 1, q2: 2, q3: 3, q4: 4, q5: 5 };
 const baseCredits = 300;
 const canvas = document.getElementById("flow-canvas");
 const svg = document.getElementById("flow-lines");
@@ -16,6 +16,7 @@ const q1Profile = document.getElementById("q1-profile");
 const q2Profile = document.getElementById("q2-profile");
 const q3Profile = document.getElementById("q3-profile");
 const q4Profile = document.getElementById("q4-profile");
+const q5Profile = document.getElementById("q5-profile");
 const creditTotal = document.getElementById("credit-total");
 const calcDetails = document.getElementById("calc-details");
 const cards = Array.from(document.querySelectorAll(".answer-card"));
@@ -312,21 +313,26 @@ function updateSystemCalculations() {
   const q2Cards = selectedCards.filter((card) => card.dataset.questionId === "q2");
   const q3Cards = selectedCards.filter((card) => card.dataset.questionId === "q3");
   const q4Cards = selectedCards.filter((card) => card.dataset.questionId === "q4");
+  const q5Cards = selectedCards.filter((card) => card.dataset.questionId === "q5");
 
   q1Profile.textContent = combineUnique(q1Cards.map((card) => card.dataset.summary));
   q2Profile.textContent = combineUnique(q2Cards.map((card) => card.dataset.summary));
   q3Profile.textContent = combineUnique(q3Cards.map((card) => card.dataset.summary));
   q4Profile.textContent = combineUnique(q4Cards.map((card) => card.dataset.summary));
+  q5Profile.textContent = combineUnique(q5Cards.map((card) => card.dataset.summary));
 
   const q1Multiplier = averageMultiplier(q1Cards);
   const q2Multiplier = averageMultiplier(q2Cards);
   const q3Multiplier = averageMultiplier(q3Cards);
   const q4Multiplier = averageMultiplier(q4Cards);
+  const q5Multiplier = averageMultiplier(q5Cards);
   const connectionMultiplier = 1 + state.edges.length * 0.1;
-  const total = Math.round(baseCredits * q1Multiplier * q2Multiplier * q3Multiplier * q4Multiplier * connectionMultiplier);
+  const total = Math.round(
+    baseCredits * q1Multiplier * q2Multiplier * q3Multiplier * q4Multiplier * q5Multiplier * connectionMultiplier,
+  );
 
   creditTotal.textContent = Number.isFinite(total) ? total.toLocaleString() : "0";
-  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Q3 ${q3Multiplier.toFixed(2)} × Q4 ${q4Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
+  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Q3 ${q3Multiplier.toFixed(2)} × Q4 ${q4Multiplier.toFixed(2)} × Q5 ${q5Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
 }
 
 function averageMultiplier(cardsSubset) {
