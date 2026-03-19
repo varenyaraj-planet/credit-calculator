@@ -58,10 +58,8 @@ function toggleCard(nodeId) {
 }
 
 function onQuestionTitleClick(questionId) {
-  const selectedCount = cards.filter(
-    (card) => card.dataset.questionId === questionId && state.selectedNodes.has(card.dataset.nodeId),
-  ).length;
-  if (selectedCount === 0) return;
+  const chosenIds = getChosenNodeIdsForQuestion(questionId);
+  if (chosenIds.size === 0) return;
 
   if (state.expandedQuestions.has(questionId)) {
     state.expandedQuestions.delete(questionId);
@@ -447,18 +445,21 @@ function applyQuestionAnswerVisibility() {
     if (block.hidden) {
       blockCards.forEach((card) => {
         card.hidden = false;
+        card.style.display = "";
       });
       state.expandedQuestions.delete(questionId);
       block.classList.remove("answered", "collapsed");
       return;
     }
 
-    const selectedCount = blockCards.filter((card) => state.selectedNodes.has(card.dataset.nodeId)).length;
-    if (selectedCount === 0) {
+    const chosenIds = getChosenNodeIdsForQuestion(questionId);
+    const chosenCount = chosenIds.size;
+
+    if (chosenCount === 0) {
       state.expandedQuestions.delete(questionId);
     }
 
-    const isAnswered = selectedCount > 0;
+    const isAnswered = chosenCount > 0;
     const isExpanded = state.expandedQuestions.has(questionId);
     const shouldCollapse = isAnswered && !isExpanded;
 
@@ -466,10 +467,38 @@ function applyQuestionAnswerVisibility() {
     block.classList.toggle("collapsed", shouldCollapse);
 
     blockCards.forEach((card) => {
-      const isSelected = state.selectedNodes.has(card.dataset.nodeId);
-      card.hidden = shouldCollapse && !isSelected;
+      const isChosen = chosenIds.has(card.dataset.nodeId);
+      const shouldHideCard = shouldCollapse && !isChosen;
+      card.hidden = shouldHideCard;
+      // Fallback in case host styles override [hidden].
+      card.style.display = shouldHideCard ? "none" : "";
     });
   });
+}
+
+function getChosenNodeIdsForQuestion(questionId) {
+  const chosenIds = new Set();
+
+  cards.forEach((card) => {
+    if (card.dataset.questionId !== questionId) return;
+    const nodeId = card.dataset.nodeId;
+    if (state.selectedNodes.has(nodeId)) {
+      chosenIds.add(nodeId);
+    }
+  });
+
+  state.edges.forEach((edge) => {
+    const fromCard = cardMap.get(edge.from);
+    const toCard = cardMap.get(edge.to);
+    if (fromCard?.dataset.questionId === questionId) {
+      chosenIds.add(edge.from);
+    }
+    if (toCard?.dataset.questionId === questionId) {
+      chosenIds.add(edge.to);
+    }
+  });
+
+  return chosenIds;
 }
 
 function isCardVisible(card) {
