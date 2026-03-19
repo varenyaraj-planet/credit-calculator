@@ -216,15 +216,26 @@ h3 {
 
 .input-handle {
   left: -5px;
+  cursor: crosshair;
 }
 
 .output-handle {
   right: -5px;
+  cursor: grab;
+}
+
+.output-handle:active {
+  cursor: grabbing;
 }
 
 .answer-node.connected .input-handle,
 .answer-node.connected .output-handle {
   background: var(--accent-blue);
+}
+
+.answer-node.drop-target {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-green) 60%, transparent);
 }
 
 .node-pill {
