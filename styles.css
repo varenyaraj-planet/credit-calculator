@@ -174,7 +174,7 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .flow-path {
@@ -182,6 +182,16 @@ body {
   stroke: var(--blue);
   stroke-width: 3;
   stroke-linecap: round;
+  pointer-events: none;
+}
+
+.flow-path.interactive {
+  pointer-events: stroke;
+  cursor: grab;
+}
+
+.flow-path.interactive:active {
+  cursor: grabbing;
 }
 
 .question-block + .question-block {

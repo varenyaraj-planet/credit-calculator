@@ -56,7 +56,39 @@ function startDragConnection(event) {
 
   const outputRect = event.currentTarget.getBoundingClientRect();
   state.dragging = {
+    mode: "new",
+    edgeIndex: null,
     fromNodeId: sourceCard.dataset.nodeId,
+    startX: outputRect.left + outputRect.width / 2,
+    startY: outputRect.top + outputRect.height / 2,
+    pointerX: event.clientX,
+    pointerY: event.clientY,
+  };
+
+  refreshCardState();
+  drawConnections();
+  window.addEventListener("pointermove", onDragPointerMove);
+  window.addEventListener("pointerup", onDragPointerUp);
+}
+
+function startExistingEdgeDrag(edgeIndex, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const edge = state.edges[edgeIndex];
+  if (!edge) return;
+
+  const sourceCard = cardMap.get(edge.from);
+  if (!sourceCard || !isCardVisible(sourceCard)) return;
+
+  const outputHandle = sourceCard.querySelector(".output-handle");
+  if (!outputHandle) return;
+
+  const outputRect = outputHandle.getBoundingClientRect();
+  state.dragging = {
+    mode: "existing",
+    edgeIndex,
+    fromNodeId: edge.from,
     startX: outputRect.left + outputRect.width / 2,
     startY: outputRect.top + outputRect.height / 2,
     pointerX: event.clientX,
@@ -80,9 +112,13 @@ function onDragPointerMove(event) {
 function onDragPointerUp(event) {
   if (!state.dragging) return;
 
-  const targetCard = resolveDropTarget(event.clientX, event.clientY, state.dragging.fromNodeId);
-  if (targetCard) {
-    addEdge(state.dragging.fromNodeId, targetCard.dataset.nodeId);
+  const dragging = state.dragging;
+  const targetCard = resolveDropTarget(event.clientX, event.clientY, dragging.fromNodeId);
+
+  if (dragging.mode === "existing") {
+    finishExistingEdgeDrag(dragging.edgeIndex, dragging.fromNodeId, targetCard);
+  } else if (targetCard) {
+    addEdge(dragging.fromNodeId, targetCard.dataset.nodeId);
   }
 
   state.dragging = null;
@@ -92,6 +128,32 @@ function onDragPointerUp(event) {
   updateSystemCalculations();
   window.removeEventListener("pointermove", onDragPointerMove);
   window.removeEventListener("pointerup", onDragPointerUp);
+}
+
+function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
+  const edge = state.edges[edgeIndex];
+  if (!edge || edge.from !== fromNodeId) return;
+
+  if (!targetCard) {
+    state.edges.splice(edgeIndex, 1);
+    syncConditionalQuestionState();
+    renderConnectionList();
+    return;
+  }
+
+  const nextToNodeId = targetCard.dataset.nodeId;
+  const duplicate = state.edges.some((existingEdge, index) => {
+    return index !== edgeIndex && existingEdge.from === fromNodeId && existingEdge.to === nextToNodeId;
+  });
+
+  if (duplicate) {
+    state.edges.splice(edgeIndex, 1);
+  } else {
+    edge.to = nextToNodeId;
+  }
+
+  syncConditionalQuestionState();
+  renderConnectionList();
 }
 
 function resolveDropTarget(clientX, clientY, fromNodeId) {
@@ -168,8 +230,11 @@ function drawConnections() {
   svg.setAttribute("viewBox", `0 0 ${canvasRect.width} ${canvasRect.height}`);
   svg.innerHTML = "";
 
-  state.edges.forEach((edge) => {
-    drawEdgePath(edge.from, edge.to, false, canvasRect);
+  state.edges.forEach((edge, edgeIndex) => {
+    const isDraggedExistingEdge =
+      state.dragging?.mode === "existing" && Number.isInteger(state.dragging.edgeIndex) && state.dragging.edgeIndex === edgeIndex;
+    if (isDraggedExistingEdge) return;
+    drawEdgePath(edge.from, edge.to, false, canvasRect, edgeIndex);
   });
 
   if (state.dragging) {
@@ -177,7 +242,7 @@ function drawConnections() {
   }
 }
 
-function drawEdgePath(fromNodeId, toNodeId, dashed, canvasRect) {
+function drawEdgePath(fromNodeId, toNodeId, dashed, canvasRect, edgeIndex = null) {
   const fromCard = cardMap.get(fromNodeId);
   const toCard = cardMap.get(toNodeId);
   if (!fromCard || !toCard) return;
@@ -193,7 +258,14 @@ function drawEdgePath(fromNodeId, toNodeId, dashed, canvasRect) {
   const startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
   const endX = toRect.left + toRect.width / 2 - canvasRect.left;
   const endY = toRect.top + toRect.height / 2 - canvasRect.top;
-  appendPath(startX, startY, endX, endY, dashed);
+  const path = appendPath(startX, startY, endX, endY, dashed);
+  if (!path || dashed || edgeIndex === null) return;
+
+  path.classList.add("interactive");
+  path.dataset.edgeIndex = String(edgeIndex);
+  path.addEventListener("pointerdown", (event) => {
+    startExistingEdgeDrag(edgeIndex, event);
+  });
 }
 
 function drawPreviewPath(canvasRect) {
@@ -217,6 +289,7 @@ function appendPath(startX, startY, endX, endY, dashed) {
     path.setAttribute("opacity", "0.85");
   }
   svg.appendChild(path);
+  return path;
 }
 
 function refreshCardState() {
