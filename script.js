@@ -3,10 +3,11 @@ const state = {
   edges: [],
   dragging: null,
   expandedQuestions: new Set(),
+  manualPoints: [],
 };
 
 const GENERAL_MONITORING_NODE_ID = "q3-general-monitoring";
-const questionOrder = { q1: 1, q2: 2, q3: 3, q4: 4, q5: 5 };
+const questionOrder = { q1: 1, q2: 2, q3: 3, q4: 4, q5: 5, q6: 6 };
 const baseCredits = 300;
 const canvas = document.getElementById("flow-canvas");
 const svg = document.getElementById("flow-lines");
@@ -18,8 +19,15 @@ const q2Profile = document.getElementById("q2-profile");
 const q3Profile = document.getElementById("q3-profile");
 const q4Profile = document.getElementById("q4-profile");
 const q5Profile = document.getElementById("q5-profile");
+const q6Profile = document.getElementById("q6-profile");
 const creditTotal = document.getElementById("credit-total");
 const calcDetails = document.getElementById("calc-details");
+const manualEntryPanel = document.getElementById("manual-entry-panel");
+const geojsonUploadPanel = document.getElementById("geojson-upload-panel");
+const manualMap = document.getElementById("manual-map");
+const manualMapSummary = document.getElementById("manual-map-summary");
+const geojsonFileInput = document.getElementById("geojson-file-input");
+const geojsonFileSummary = document.getElementById("geojson-file-summary");
 const cards = Array.from(document.querySelectorAll(".answer-card"));
 const outputHandles = Array.from(document.querySelectorAll(".output-handle"));
 const questionBlocks = Array.from(document.querySelectorAll(".question-block[data-question-id]"));
@@ -40,10 +48,30 @@ questionBlocks.forEach((block) => {
   title.addEventListener("click", () => onQuestionTitleClick(questionId));
 });
 
+if (manualMap) {
+  manualMap.addEventListener("click", onManualMapClick);
+}
+
+if (geojsonFileInput) {
+  geojsonFileInput.addEventListener("change", onGeoJsonFileChange);
+}
+
 clearButton.addEventListener("click", clearAll);
 window.addEventListener("resize", drawConnections);
 
 function toggleCard(nodeId) {
+  const card = cardMap.get(nodeId);
+  const questionId = card?.dataset.questionId;
+
+  if (questionId === "q6" && !state.selectedNodes.has(nodeId)) {
+    // Area input mode is single-select.
+    cards.forEach((candidate) => {
+      if (candidate.dataset.questionId === "q6") {
+        state.selectedNodes.delete(candidate.dataset.nodeId);
+      }
+    });
+  }
+
   if (state.selectedNodes.has(nodeId)) {
     state.selectedNodes.delete(nodeId);
   } else {
@@ -54,6 +82,7 @@ function toggleCard(nodeId) {
   applyQuestionAnswerVisibility();
   refreshCardState();
   updateSystemCalculations();
+  updateAreaInputModeUI();
   drawConnections();
 }
 
@@ -95,6 +124,7 @@ function onQuestionTitleClick(questionId) {
 
   applyQuestionAnswerVisibility();
   refreshCardState();
+  updateAreaInputModeUI();
   drawConnections();
 }
 
@@ -178,6 +208,7 @@ function onDragPointerUp(event) {
   refreshCardState();
   drawConnections();
   updateSystemCalculations();
+  updateAreaInputModeUI();
   window.removeEventListener("pointermove", onDragPointerMove);
   window.removeEventListener("pointerup", onDragPointerUp);
 }
@@ -192,6 +223,7 @@ function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
     syncConditionalQuestionState();
     applyQuestionAnswerVisibility();
     renderConnectionList();
+    updateAreaInputModeUI();
     return;
   }
 
@@ -210,6 +242,7 @@ function finishExistingEdgeDrag(edgeIndex, fromNodeId, targetCard) {
   syncConditionalQuestionState();
   applyQuestionAnswerVisibility();
   renderConnectionList();
+  updateAreaInputModeUI();
 }
 
 function resolveDropTarget(clientX, clientY, fromNodeId) {
@@ -249,6 +282,7 @@ function addEdge(from, to) {
   syncConditionalQuestionState();
   applyQuestionAnswerVisibility();
   renderConnectionList();
+  updateAreaInputModeUI();
 }
 
 function removeEdge(index) {
@@ -263,6 +297,7 @@ function removeEdge(index) {
   refreshCardState();
   drawConnections();
   updateSystemCalculations();
+  updateAreaInputModeUI();
 }
 
 function renderConnectionList() {
@@ -375,25 +410,35 @@ function updateSystemCalculations() {
   const q3Cards = selectedCards.filter((card) => card.dataset.questionId === "q3");
   const q4Cards = selectedCards.filter((card) => card.dataset.questionId === "q4");
   const q5Cards = selectedCards.filter((card) => card.dataset.questionId === "q5");
+  const q6Cards = selectedCards.filter((card) => card.dataset.questionId === "q6");
 
   q1Profile.textContent = combineUnique(q1Cards.map((card) => card.dataset.summary));
   q2Profile.textContent = combineUnique(q2Cards.map((card) => card.dataset.summary));
   q3Profile.textContent = combineUnique(q3Cards.map((card) => card.dataset.summary));
   q4Profile.textContent = combineUnique(q4Cards.map((card) => card.dataset.summary));
   q5Profile.textContent = combineUnique(q5Cards.map((card) => card.dataset.summary));
+  q6Profile.textContent = combineUnique(q6Cards.map((card) => card.dataset.summary));
 
   const q1Multiplier = averageMultiplier(q1Cards);
   const q2Multiplier = averageMultiplier(q2Cards);
   const q3Multiplier = averageMultiplier(q3Cards);
   const q4Multiplier = averageMultiplier(q4Cards);
   const q5Multiplier = averageMultiplier(q5Cards);
+  const q6Multiplier = averageMultiplier(q6Cards);
   const connectionMultiplier = 1 + state.edges.length * 0.1;
   const total = Math.round(
-    baseCredits * q1Multiplier * q2Multiplier * q3Multiplier * q4Multiplier * q5Multiplier * connectionMultiplier,
+    baseCredits *
+      q1Multiplier *
+      q2Multiplier *
+      q3Multiplier *
+      q4Multiplier *
+      q5Multiplier *
+      q6Multiplier *
+      connectionMultiplier,
   );
 
   creditTotal.textContent = Number.isFinite(total) ? total.toLocaleString() : "0";
-  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Q3 ${q3Multiplier.toFixed(2)} × Q4 ${q4Multiplier.toFixed(2)} × Q5 ${q5Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
+  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Q3 ${q3Multiplier.toFixed(2)} × Q4 ${q4Multiplier.toFixed(2)} × Q5 ${q5Multiplier.toFixed(2)} × Q6 ${q6Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
 }
 
 function averageMultiplier(cardsSubset) {
@@ -416,11 +461,23 @@ function clearAll() {
   state.edges = [];
   state.dragging = null;
   state.expandedQuestions.clear();
+  state.manualPoints = [];
+  if (geojsonFileInput) {
+    geojsonFileInput.value = "";
+  }
+  if (geojsonFileSummary) {
+    geojsonFileSummary.textContent = "No file selected.";
+  }
+  if (manualMapSummary) {
+    manualMapSummary.textContent = "Click on the map to drop AOI points.";
+  }
   syncConditionalQuestionState();
   applyQuestionAnswerVisibility();
   clearDropHighlights();
   renderConnectionList();
   refreshCardState();
+  renderManualMapMarkers();
+  updateAreaInputModeUI();
   drawConnections();
   updateSystemCalculations();
 }
@@ -533,6 +590,86 @@ function getChosenNodeIdsForQuestion(questionId) {
   return chosenIds;
 }
 
+function updateAreaInputModeUI() {
+  const areaMode = resolveActiveAreaInputMode();
+
+  if (manualEntryPanel) {
+    manualEntryPanel.hidden = areaMode !== "manual";
+  }
+
+  if (geojsonUploadPanel) {
+    geojsonUploadPanel.hidden = areaMode !== "geojson";
+  }
+}
+
+function resolveActiveAreaInputMode() {
+  const manualId = "q6-manual-entry";
+  const geojsonId = "q6-upload-geojson";
+
+  if (state.selectedNodes.has(manualId)) return "manual";
+  if (state.selectedNodes.has(geojsonId)) return "geojson";
+
+  const chosenIds = getChosenNodeIdsForQuestion("q6");
+  if (chosenIds.has(manualId)) return "manual";
+  if (chosenIds.has(geojsonId)) return "geojson";
+  return null;
+}
+
+function onManualMapClick(event) {
+  if (resolveActiveAreaInputMode() !== "manual") return;
+  if (!manualMap) return;
+
+  const rect = manualMap.getBoundingClientRect();
+  const xRatio = (event.clientX - rect.left) / rect.width;
+  const yRatio = (event.clientY - rect.top) / rect.height;
+  if (xRatio < 0 || xRatio > 1 || yRatio < 0 || yRatio > 1) return;
+
+  state.manualPoints.push({ xRatio, yRatio });
+  renderManualMapMarkers();
+
+  if (manualMapSummary) {
+    manualMapSummary.textContent = `${state.manualPoints.length} AOI point(s) marked.`;
+  }
+}
+
+function renderManualMapMarkers() {
+  if (!manualMap) return;
+
+  manualMap.querySelectorAll(".map-marker").forEach((marker) => marker.remove());
+  state.manualPoints.forEach((point) => {
+    const marker = document.createElement("span");
+    marker.className = "map-marker";
+    marker.style.left = `${point.xRatio * 100}%`;
+    marker.style.top = `${point.yRatio * 100}%`;
+    manualMap.appendChild(marker);
+  });
+}
+
+function onGeoJsonFileChange(event) {
+  const file = event.target.files?.[0];
+  if (!geojsonFileSummary) return;
+
+  if (!file) {
+    geojsonFileSummary.textContent = "No file selected.";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || "{}"));
+      const featureCount = Array.isArray(parsed.features) ? parsed.features.length : 0;
+      geojsonFileSummary.textContent = `${file.name} loaded (${featureCount} feature${featureCount === 1 ? "" : "s"}).`;
+    } catch {
+      geojsonFileSummary.textContent = `${file.name} selected (unable to parse as valid GeoJSON).`;
+    }
+  };
+  reader.onerror = () => {
+    geojsonFileSummary.textContent = `${file.name} selected (failed to read file).`;
+  };
+  reader.readAsText(file);
+}
+
 function expandQuestionsForEdge(edge) {
   if (!edge) return;
   [edge.from, edge.to].forEach((nodeId) => {
@@ -551,5 +688,7 @@ syncConditionalQuestionState();
 applyQuestionAnswerVisibility();
 renderConnectionList();
 refreshCardState();
+renderManualMapMarkers();
+updateAreaInputModeUI();
 drawConnections();
 updateSystemCalculations();

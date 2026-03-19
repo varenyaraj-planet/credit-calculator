@@ -41,6 +41,11 @@
         </section>
 
         <section class="panel-card">
+          <p class="panel-label">Area Definition Input</p>
+          <p id="q6-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card">
           <p class="panel-label">Connections</p>
           <ul id="connection-list" class="connection-list">
             <li class="muted">No connections yet.</li>
@@ -418,6 +423,59 @@
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
             </div>
+          </article>
+
+          <article class="question-block" data-question-id="q6">
+            <h3 class="question-title">Tell us about the areas you want to monitor</h3>
+
+            <div class="card-grid q2-grid">
+              <button
+                class="answer-card"
+                data-node-id="q6-manual-entry"
+                data-question-id="q6"
+                data-label="Manual entry"
+                data-summary="Manual entry"
+                data-area-input="manual"
+                data-multiplier="1.1"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q6-A1</span>
+                <span class="card-copy">
+                  <strong>Manual entry</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q6-upload-geojson"
+                data-question-id="q6"
+                data-label="Upload GeoJSON"
+                data-summary="Upload GeoJSON"
+                data-area-input="geojson"
+                data-multiplier="1.0"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q6-A2</span>
+                <span class="card-copy">
+                  <strong>Upload GeoJSON</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <section class="area-input-panel" id="manual-entry-panel" hidden>
+              <h4>Manual entry map</h4>
+              <div id="manual-map" class="manual-map" aria-label="Manual entry map canvas"></div>
+              <p id="manual-map-summary" class="input-summary">Click on the map to drop AOI points.</p>
+            </section>
+
+            <section class="area-input-panel" id="geojson-upload-panel" hidden>
+              <h4>GeoJSON uploader</h4>
+              <label class="uploader-label" for="geojson-file-input">Choose GeoJSON file</label>
+              <input id="geojson-file-input" type="file" accept=".geojson,.json,application/geo+json,application/json" />
+              <p id="geojson-file-summary" class="input-summary">No file selected.</p>
+            </section>
           </article>
         </section>
       </main>
