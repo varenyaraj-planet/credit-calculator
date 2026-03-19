@@ -26,6 +26,11 @@
         </section>
 
         <section class="panel-card">
+          <p class="panel-label">Selected Asset Types</p>
+          <p id="q3-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card">
           <p class="panel-label">Connections</p>
           <ul id="connection-list" class="connection-list">
             <li class="muted">No connections yet.</li>
@@ -35,7 +40,7 @@
         <section class="panel-card">
           <p class="panel-label">Estimated Planet Credits</p>
           <p id="credit-total" class="credit-total">0</p>
-          <small id="calc-details" class="calc-details">Select cards and connect Q1 to Q2.</small>
+          <small id="calc-details" class="calc-details">Select cards and connect answers across questions.</small>
         </section>
 
         <button id="clear-button" class="clear-button">Clear selections & links</button>
@@ -184,6 +189,90 @@
                 <span class="card-copy">
                   <strong>Multi-spectral remote sensing</strong>
                   <small>Advanced analysis requiring spectral bands (NDVI, change detection, etc.).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block">
+            <h3>What type of assets are at these locations?</h3>
+
+            <div class="card-grid">
+              <button
+                class="answer-card"
+                data-node-id="q3-agri-forestry"
+                data-question-id="q3"
+                data-label="Agriculture & Forestry"
+                data-summary="Routes to AUM"
+                data-asset-route="AUM"
+                data-multiplier="1.25"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q3-A1</span>
+                <span class="card-copy">
+                  <strong>Agriculture & Forestry</strong>
+                  <small>For daily, point-in-time scenes to monitor crop health - Routes to AUM.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q3-maritime-water"
+                data-question-id="q3"
+                data-label="Maritime & Open Water"
+                data-summary="Routes to Open Water"
+                data-asset-route="Open Water"
+                data-multiplier="1.45"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q3-A2</span>
+                <span class="card-copy">
+                  <strong>Maritime & Open Water</strong>
+                  <small>For tracking vessels or events in the open ocean - Routes to Open Water.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q3-mosaics"
+                data-question-id="q3"
+                data-label="Mosaics"
+                data-summary="Routes to Mosaics"
+                data-asset-route="Mosaics"
+                data-multiplier="1.6"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q3-A3</span>
+                <span class="card-copy">
+                  <strong>Mosaics</strong>
+                  <small>
+                    For clean, cloud-free, aggregated base layer over a large region
+                    (Weekly/Monthly/Quarterly) - Routes to Mosaics.
+                  </small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q3-general-monitoring"
+                data-question-id="q3"
+                data-label="General Point-in-Time Monitoring"
+                data-summary="Routes to Hybrid/Reserved"
+                data-asset-route="Hybrid/Reserved"
+                data-multiplier="1.32"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q3-A4</span>
+                <span class="card-copy">
+                  <strong>General Point-in-Time Monitoring</strong>
+                  <small>
+                    For individual, daily scenes of specific commercial or government sites - Routes to
+                    Hybrid/Reserved.
+                  </small>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>

@@ -4,7 +4,7 @@ const state = {
   dragging: null,
 };
 
-const questionOrder = { q1: 1, q2: 2 };
+const questionOrder = { q1: 1, q2: 2, q3: 3 };
 const baseCredits = 300;
 const canvas = document.getElementById("flow-canvas");
 const svg = document.getElementById("flow-lines");
@@ -12,6 +12,7 @@ const connectionList = document.getElementById("connection-list");
 const clearButton = document.getElementById("clear-button");
 const q1Profile = document.getElementById("q1-profile");
 const q2Profile = document.getElementById("q2-profile");
+const q3Profile = document.getElementById("q3-profile");
 const creditTotal = document.getElementById("credit-total");
 const calcDetails = document.getElementById("calc-details");
 const cards = Array.from(document.querySelectorAll(".answer-card"));
@@ -225,17 +226,20 @@ function updateSystemCalculations() {
     .filter(Boolean);
   const q1Cards = selectedCards.filter((card) => card.dataset.questionId === "q1");
   const q2Cards = selectedCards.filter((card) => card.dataset.questionId === "q2");
+  const q3Cards = selectedCards.filter((card) => card.dataset.questionId === "q3");
 
   q1Profile.textContent = combineUnique(q1Cards.map((card) => card.dataset.summary));
   q2Profile.textContent = combineUnique(q2Cards.map((card) => card.dataset.summary));
+  q3Profile.textContent = combineUnique(q3Cards.map((card) => card.dataset.summary));
 
   const q1Multiplier = averageMultiplier(q1Cards);
   const q2Multiplier = averageMultiplier(q2Cards);
+  const q3Multiplier = averageMultiplier(q3Cards);
   const connectionMultiplier = 1 + state.edges.length * 0.1;
-  const total = Math.round(baseCredits * q1Multiplier * q2Multiplier * connectionMultiplier);
+  const total = Math.round(baseCredits * q1Multiplier * q2Multiplier * q3Multiplier * connectionMultiplier);
 
   creditTotal.textContent = Number.isFinite(total) ? total.toLocaleString() : "0";
-  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
+  calcDetails.textContent = `Base ${baseCredits} × Q1 ${q1Multiplier.toFixed(2)} × Q2 ${q2Multiplier.toFixed(2)} × Q3 ${q3Multiplier.toFixed(2)} × Links ${connectionMultiplier.toFixed(2)}`;
 }
 
 function averageMultiplier(cardsSubset) {
