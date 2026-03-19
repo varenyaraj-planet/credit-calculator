@@ -493,9 +493,9 @@ function applyQuestionAnswerVisibility() {
 
     const isAnswered = chosenCount > 0;
     const isExpanded = state.expandedQuestions.has(questionId);
-    const shouldCollapse = isAnswered && !isExpanded;
+    const shouldCollapse = questionId !== "q5" && isAnswered && !isExpanded;
 
-    block.classList.toggle("answered", isAnswered);
+    block.classList.toggle("answered", questionId !== "q5" && isAnswered);
     block.classList.toggle("collapsed", shouldCollapse);
 
     blockCards.forEach((card) => {
