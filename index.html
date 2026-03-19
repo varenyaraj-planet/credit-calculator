@@ -3,153 +3,215 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Question Answer Dataflow</title>
+    <title>Planet Credit Calculator</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="top-nav">
-      <div class="brand">Planet Credits</div>
-      <nav class="nav-links" aria-label="Primary">
-        <a href="#home" class="nav-link" data-route-link="home">Home</a>
-        <a href="#dataflow" class="nav-link" data-route-link="dataflow">Question Dataflow</a>
-      </nav>
+    <header class="page-header">
+      <h1>PLANET CREDIT CALCULATOR</h1>
+      <p>Dataflow decision canvas for scenario planning</p>
     </header>
 
-    <section class="home-view view" id="home-view">
-      <div class="home-card">
-        <h1>Decision Flow Playground</h1>
-        <p class="subtitle">
-          Build decision logic by connecting answer nodes across questions. Open the dataflow interface
-          from navigation or with the button below.
-        </p>
-        <div class="home-tags">
-          <span>Question 1: who are you?</span>
-          <span>Question 2: when are you born?</span>
+    <div class="layout">
+      <aside class="calc-panel">
+        <h2>System Calculations</h2>
+
+        <div class="panel-card">
+          <p class="panel-label">Access Profile</p>
+          <p id="access-profile" class="panel-value">Not set</p>
         </div>
-        <button id="go-to-dataflow" class="action-button home-action">Open Dataflow Builder →</button>
-      </div>
-    </section>
 
-    <section class="view" id="dataflow-view" hidden>
-      <div class="app-shell">
-        <main class="main-panel">
-          <button class="back-link" id="back-to-home" type="button">← Back to Home</button>
-          <h1>Question Answer Dataflow Builder</h1>
-          <p class="subtitle">
-            Connect answers as nodes to model decision-making with a simple dataflow.
-          </p>
+        <div class="panel-card">
+          <p class="panel-label">Frequency Profile</p>
+          <p id="frequency-profile" class="panel-value">Not set</p>
+        </div>
 
-          <section class="question-block">
-            <h2>1. Who are you?</h2>
-            <p class="section-hint">Select a source answer node.</p>
-            <div class="node-row">
-              <button class="answer-node" data-node-id="q1-human" data-question-id="q1" data-answer="human">
+        <div class="panel-card">
+          <p class="panel-label">Analysis Mode</p>
+          <p id="analysis-profile" class="panel-value">Not set</p>
+        </div>
+
+        <div class="panel-card">
+          <p class="panel-label">Connections</p>
+          <ul id="connection-list" class="connection-list">
+            <li class="muted-item">No links created yet.</li>
+          </ul>
+        </div>
+
+        <div class="panel-card">
+          <p class="panel-label">Estimated Planet Credits</p>
+          <p id="credits-output" class="credits-output">0</p>
+          <small id="calc-explain" class="calc-explain">Select answers and connect nodes to calculate.</small>
+        </div>
+
+        <button id="clear-all-button" class="action-button">Clear Selections + Links</button>
+      </aside>
+
+      <main class="main-canvas">
+        <div class="canvas-header">
+          <h2>Main Canvas</h2>
+          <p>Select multiple cards and drag from output nodes to input nodes to build dataflow links.</p>
+        </div>
+
+        <div class="flow-canvas" id="flow-canvas">
+          <svg id="flow-lines" aria-hidden="true"></svg>
+
+          <section class="question-section">
+            <h3>Question 1: What would you want to do?</h3>
+            <p class="question-hint">UI Component: Card with multiple selection possible</p>
+            <div class="answer-grid">
+              <button
+                class="answer-card"
+                data-node-id="q1-sporadic"
+                data-question-id="q1"
+                data-answer-label="Sporadically monitor different places"
+                data-access-mode="Global Roaming (Flexible Access)"
+                data-frequency-mode="Flexible"
+                data-profile-lean="Flexible"
+                data-access-multiplier="1.28"
+                data-frequency-multiplier="1.12"
+                data-lean-multiplier="1.00"
+              >
                 <span class="input-handle" aria-hidden="true"></span>
-                <span class="node-pill pill-blue">A1</span>
-                <span class="node-text">
-                  <strong>Human</strong>
-                  <small>Answer 1</small>
+                <span class="card-badge badge-blue">Q1-A1</span>
+                <span class="card-copy">
+                  <strong>Sporadically monitor different places</strong>
+                  <small>Sets: Global Roaming (Flexible Access).</small>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
 
-              <button class="answer-node" data-node-id="q1-insect" data-question-id="q1" data-answer="insect">
+              <button
+                class="answer-card"
+                data-node-id="q1-event"
+                data-question-id="q1"
+                data-answer-label="Check only a few images (Event)"
+                data-access-mode="Fixed AOI"
+                data-frequency-mode="Low Frequency"
+                data-profile-lean="Hybrid lean"
+                data-access-multiplier="1.00"
+                data-frequency-multiplier="1.14"
+                data-lean-multiplier="0.92"
+              >
                 <span class="input-handle" aria-hidden="true"></span>
-                <span class="node-pill pill-green">A2</span>
-                <span class="node-text">
-                  <strong>Insect</strong>
-                  <small>Answer 2</small>
+                <span class="card-badge badge-green">Q1-A2</span>
+                <span class="card-copy">
+                  <strong>Check only a few images (Event)</strong>
+                  <small>Sets: Fixed AOI, Low Frequency (Hybrid lean).</small>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
 
-              <button class="answer-node" data-node-id="q1-dolphin" data-question-id="q1" data-answer="dolphin">
+              <button
+                class="answer-card"
+                data-node-id="q1-monthly"
+                data-question-id="q1"
+                data-answer-label="Regular insights (Monthly-ish)"
+                data-access-mode="Fixed AOI"
+                data-frequency-mode="Medium Frequency"
+                data-profile-lean="Standard"
+                data-access-multiplier="1.00"
+                data-frequency-multiplier="1.44"
+                data-lean-multiplier="1.00"
+              >
                 <span class="input-handle" aria-hidden="true"></span>
-                <span class="node-pill pill-purple">A3</span>
-                <span class="node-text">
-                  <strong>Dolphin</strong>
-                  <small>Answer 3</small>
+                <span class="card-badge badge-purple">Q1-A3</span>
+                <span class="card-copy">
+                  <strong>Regular insights (Monthly-ish)</strong>
+                  <small>Sets: Fixed AOI, Medium Frequency.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-daily"
+                data-question-id="q1"
+                data-answer-label="Daily monitoring"
+                data-access-mode="Fixed AOI"
+                data-frequency-mode="High Frequency"
+                data-profile-lean="Reserved lean"
+                data-access-multiplier="1.00"
+                data-frequency-multiplier="1.90"
+                data-lean-multiplier="1.18"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-badge badge-blue">Q1-A4</span>
+                <span class="card-copy">
+                  <strong>Daily monitoring</strong>
+                  <small>Sets: Fixed AOI, High Frequency (Reserved lean).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-custom"
+                data-question-id="q1"
+                data-answer-label="Other (Custom)"
+                data-access-mode="Fixed AOI"
+                data-frequency-mode="Custom Frequency"
+                data-profile-lean="Custom"
+                data-access-multiplier="1.00"
+                data-frequency-multiplier="1.33"
+                data-lean-multiplier="1.06"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-badge badge-green">Q1-A5</span>
+                <span class="card-copy">
+                  <strong>Other (Custom)</strong>
+                  <small>Sets: Fixed AOI, prompts for custom frequency.</small>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
             </div>
           </section>
 
-          <section class="question-block">
-            <h2>2. When are you born?</h2>
-            <p class="section-hint">Select a target answer node.</p>
-            <div class="node-row">
-              <button class="answer-node" data-node-id="q2-1992" data-question-id="q2" data-answer="1992">
+          <section class="question-section">
+            <h3>
+              Question 2: Are you planning to perform only visual analysis, or remote sensing methods requiring
+              multi-spectral data?
+            </h3>
+            <p class="question-hint">UI Component: Card with multiple selection possible</p>
+            <div class="answer-grid two-col">
+              <button
+                class="answer-card"
+                data-node-id="q2-visual"
+                data-question-id="q2"
+                data-answer-label="Visual analysis only"
+                data-analysis-mode="Visual analysis only"
+                data-analysis-multiplier="1.00"
+              >
                 <span class="input-handle" aria-hidden="true"></span>
-                <span class="node-pill pill-blue">B1</span>
-                <span class="node-text">
-                  <strong>1992</strong>
-                  <small>Answer 1</small>
+                <span class="card-badge badge-blue">Q2-A1</span>
+                <span class="card-copy">
+                  <strong>Visual analysis only</strong>
+                  <small>Basic visual inspection and interpretation.</small>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
 
-              <button class="answer-node" data-node-id="q2-1892" data-question-id="q2" data-answer="1892">
+              <button
+                class="answer-card"
+                data-node-id="q2-multispectral"
+                data-question-id="q2"
+                data-answer-label="Multi-spectral remote sensing"
+                data-analysis-mode="Multi-spectral remote sensing"
+                data-analysis-multiplier="1.78"
+              >
                 <span class="input-handle" aria-hidden="true"></span>
-                <span class="node-pill pill-green">B2</span>
-                <span class="node-text">
-                  <strong>1892</strong>
-                  <small>Answer 2</small>
-                </span>
-                <span class="output-handle" aria-hidden="true"></span>
-              </button>
-
-              <button class="answer-node" data-node-id="q2-1792" data-question-id="q2" data-answer="1792">
-                <span class="input-handle" aria-hidden="true"></span>
-                <span class="node-pill pill-purple">B3</span>
-                <span class="node-text">
-                  <strong>1792</strong>
-                  <small>Answer 3</small>
+                <span class="card-badge badge-purple">Q2-A2</span>
+                <span class="card-copy">
+                  <strong>Multi-spectral remote sensing</strong>
+                  <small>Advanced analysis requiring spectral bands (NDVI, change detection, etc.).</small>
                 </span>
                 <span class="output-handle" aria-hidden="true"></span>
               </button>
             </div>
           </section>
-
-          <section class="canvas-section">
-            <h3>Dataflow Connections</h3>
-            <p class="section-hint">
-              Drag from a Question 1 output dot to a Question 2 input dot to create a flow edge.
-            </p>
-            <div class="flow-canvas" id="flow-canvas">
-              <svg id="flow-lines" aria-hidden="true"></svg>
-            </div>
-          </section>
-        </main>
-
-        <aside class="side-panel">
-          <h2>Decision Panel</h2>
-          <div class="panel-card">
-            <p class="panel-label">Selected Source</p>
-            <p id="selected-source" class="panel-value">None</p>
-          </div>
-
-          <div class="panel-card">
-            <p class="panel-label">Rule Connections</p>
-            <ul id="connection-list" class="connection-list">
-              <li class="muted-item">No connections yet.</li>
-            </ul>
-          </div>
-
-          <div class="panel-card">
-            <p class="panel-label">Decision Output</p>
-            <div id="decision-output" class="decision-output">
-              Create at least one connection, then evaluate.
-            </div>
-          </div>
-
-          <div class="panel-actions">
-            <button id="evaluate-button" class="action-button">Evaluate Decision →</button>
-            <button id="reset-button" class="ghost-button">Reset Flow</button>
-          </div>
-        </aside>
-      </div>
-    </section>
+        </div>
+      </main>
+    </div>
 
     <script src="script.js"></script>
   </body>
