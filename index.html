@@ -521,10 +521,31 @@
               </button>
             </div>
 
-            <section class="area-input-panel" id="manual-entry-panel" hidden>
-              <h4>Manual entry map</h4>
-              <div id="manual-map" class="manual-map" aria-label="Manual entry map canvas"></div>
-              <p id="manual-map-summary" class="input-summary">Click on the map to drop AOI points.</p>
+            <section class="area-input-panel manual-entry-panel" id="manual-entry-panel" hidden>
+              <div class="map-toolbar">
+                <div class="tool-group">
+                  <button type="button" class="tool-button active" data-map-tool="square">Square</button>
+                  <button type="button" class="tool-button" data-map-tool="circle">Circle</button>
+                  <button type="button" class="tool-button" data-map-tool="pen">Pen</button>
+                </div>
+                <form id="manual-map-search-form" class="map-search-form">
+                  <input
+                    id="manual-map-search-input"
+                    type="search"
+                    placeholder="Search a place..."
+                    autocomplete="off"
+                  />
+                  <button type="submit" class="tool-button">Search</button>
+                </form>
+                <div class="tool-group">
+                  <button type="button" id="manual-map-clear" class="tool-button">Clear Drawings</button>
+                  <button type="button" id="manual-map-done" class="tool-button">Done</button>
+                </div>
+              </div>
+              <div id="manual-map" class="manual-map" aria-label="Manual entry map canvas">
+                <svg id="manual-map-overlay" class="manual-map-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+              </div>
+              <p id="manual-map-summary" class="input-summary">Use the toolbar to draw AOI shapes on the map.</p>
             </section>
 
             <section class="area-input-panel" id="geojson-upload-panel" hidden>

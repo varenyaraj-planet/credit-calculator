@@ -3,7 +3,11 @@ const state = {
   edges: [],
   dragging: null,
   expandedQuestions: new Set(),
-  manualPoints: [],
+  manualShapes: [],
+  manualDraft: null,
+  manualTool: "square",
+  manualSearchMarker: null,
+  manualOverlayDismissed: false,
   geojsonFeatureCount: 0,
 };
 
@@ -34,7 +38,13 @@ const calcUsdMonthly = document.getElementById("calc-usd-monthly");
 const manualEntryPanel = document.getElementById("manual-entry-panel");
 const geojsonUploadPanel = document.getElementById("geojson-upload-panel");
 const manualMap = document.getElementById("manual-map");
+const manualMapOverlay = document.getElementById("manual-map-overlay");
 const manualMapSummary = document.getElementById("manual-map-summary");
+const manualMapToolButtons = Array.from(document.querySelectorAll("[data-map-tool]"));
+const manualMapSearchForm = document.getElementById("manual-map-search-form");
+const manualMapSearchInput = document.getElementById("manual-map-search-input");
+const manualMapClearButton = document.getElementById("manual-map-clear");
+const manualMapDoneButton = document.getElementById("manual-map-done");
 const geojsonFileInput = document.getElementById("geojson-file-input");
 const geojsonFileSummary = document.getElementById("geojson-file-summary");
 const cards = Array.from(document.querySelectorAll(".answer-card"));
@@ -58,7 +68,25 @@ questionBlocks.forEach((block) => {
 });
 
 if (manualMap) {
-  manualMap.addEventListener("click", onManualMapClick);
+  manualMap.addEventListener("pointerdown", onManualMapPointerDown);
+}
+
+if (manualMapToolButtons.length > 0) {
+  manualMapToolButtons.forEach((button) => {
+    button.addEventListener("click", () => setManualTool(button.dataset.mapTool || "square"));
+  });
+}
+
+if (manualMapSearchForm) {
+  manualMapSearchForm.addEventListener("submit", onManualSearchSubmit);
+}
+
+if (manualMapClearButton) {
+  manualMapClearButton.addEventListener("click", clearManualDrawings);
+}
+
+if (manualMapDoneButton) {
+  manualMapDoneButton.addEventListener("click", dismissManualFullscreenMap);
 }
 
 if (geojsonFileInput) {
@@ -87,6 +115,13 @@ function toggleCard(nodeId) {
     state.selectedNodes.add(nodeId);
   }
 
+  if (nodeId === "q6-manual-entry" && state.selectedNodes.has(nodeId)) {
+    state.manualOverlayDismissed = false;
+  }
+  if (nodeId === "q6-upload-geojson" && state.selectedNodes.has(nodeId)) {
+    state.manualOverlayDismissed = false;
+  }
+
   syncConditionalQuestionState();
   applyQuestionAnswerVisibility();
   refreshCardState();
@@ -96,6 +131,16 @@ function toggleCard(nodeId) {
 }
 
 function onCardClick(card) {
+  if (
+    card.dataset.nodeId === "q6-manual-entry" &&
+    state.selectedNodes.has("q6-manual-entry") &&
+    state.manualOverlayDismissed
+  ) {
+    state.manualOverlayDismissed = false;
+    updateAreaInputModeUI();
+    return;
+  }
+
   if (shouldExpandOnAnsweredCardClick(card)) {
     const questionId = card.dataset.questionId;
     if (questionId) {
@@ -485,8 +530,8 @@ function resolveLatencyPcMultiplier(q5Cards) {
 function resolveTotalAoiKm2() {
   const mode = resolveActiveAreaInputMode();
   if (mode === "manual") {
-    if (state.manualPoints.length === 0) return 50;
-    return state.manualPoints.length * 25;
+    if (state.manualShapes.length === 0) return 50;
+    return Math.max(50, estimateManualShapeAreaKm2(state.manualShapes));
   }
 
   if (mode === "geojson") {
@@ -495,6 +540,47 @@ function resolveTotalAoiKm2() {
   }
 
   return 0;
+}
+
+function estimateManualShapeAreaKm2(shapes) {
+  const mapScaleKm2 = 20000;
+  return shapes.reduce((total, shape) => {
+    if (shape.type === "square") {
+      const width = Math.abs(shape.end.x - shape.start.x);
+      const height = Math.abs(shape.end.y - shape.start.y);
+      return total + width * height * mapScaleKm2;
+    }
+
+    if (shape.type === "circle") {
+      const radius = Math.hypot(shape.end.x - shape.start.x, shape.end.y - shape.start.y);
+      return total + Math.PI * radius * radius * mapScaleKm2;
+    }
+
+    if (shape.type === "pen") {
+      const bounds = getPathBounds(shape.points || []);
+      const areaRatio = Math.max((bounds.maxX - bounds.minX) * (bounds.maxY - bounds.minY), 0.003);
+      return total + areaRatio * mapScaleKm2 * 0.65;
+    }
+
+    return total;
+  }, 0);
+}
+
+function getPathBounds(points) {
+  if (!points || points.length === 0) {
+    return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+  }
+  let minX = points[0].x;
+  let maxX = points[0].x;
+  let minY = points[0].y;
+  let maxY = points[0].y;
+  points.forEach((point) => {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  });
+  return { minX, maxX, minY, maxY };
 }
 
 function formatCredits(value) {
@@ -512,6 +598,10 @@ function formatCurrency(value) {
   return `$${value.toFixed(2)}`;
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
 function combineUnique(items) {
   const unique = Array.from(new Set(items.filter(Boolean)));
   return unique.length > 0 ? unique.join(" + ") : "None";
@@ -526,7 +616,10 @@ function clearAll() {
   state.edges = [];
   state.dragging = null;
   state.expandedQuestions.clear();
-  state.manualPoints = [];
+  state.manualShapes = [];
+  state.manualDraft = null;
+  state.manualSearchMarker = null;
+  state.manualOverlayDismissed = false;
   state.geojsonFeatureCount = 0;
   if (geojsonFileInput) {
     geojsonFileInput.value = "";
@@ -535,14 +628,14 @@ function clearAll() {
     geojsonFileSummary.textContent = "No file selected.";
   }
   if (manualMapSummary) {
-    manualMapSummary.textContent = "Click on the map to drop AOI points.";
+    manualMapSummary.textContent = "Use the toolbar to draw AOI shapes on the map.";
   }
   syncConditionalQuestionState();
   applyQuestionAnswerVisibility();
   clearDropHighlights();
   renderConnectionList();
   refreshCardState();
-  renderManualMapMarkers();
+  renderManualMapGraphics();
   updateAreaInputModeUI();
   drawConnections();
   updateSystemCalculations();
@@ -666,7 +759,7 @@ function updateAreaInputModeUI() {
   const areaMode = resolveActiveAreaInputMode();
 
   if (manualEntryPanel) {
-    manualEntryPanel.hidden = areaMode !== "manual";
+    manualEntryPanel.hidden = areaMode !== "manual" || state.manualOverlayDismissed;
   }
 
   if (geojsonUploadPanel) {
@@ -687,35 +780,244 @@ function resolveActiveAreaInputMode() {
   return null;
 }
 
-function onManualMapClick(event) {
+function setManualTool(tool) {
+  state.manualTool = tool === "circle" || tool === "pen" ? tool : "square";
+  manualMapToolButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.mapTool === state.manualTool);
+  });
+}
+
+function onManualMapPointerDown(event) {
   if (resolveActiveAreaInputMode() !== "manual") return;
   if (!manualMap) return;
+  if (event.button !== 0) return;
 
-  const rect = manualMap.getBoundingClientRect();
-  const xRatio = (event.clientX - rect.left) / rect.width;
-  const yRatio = (event.clientY - rect.top) / rect.height;
-  if (xRatio < 0 || xRatio > 1 || yRatio < 0 || yRatio > 1) return;
+  const point = pointerEventToMapRatio(event);
+  if (!point) return;
 
-  state.manualPoints.push({ xRatio, yRatio });
-  renderManualMapMarkers();
-
-  if (manualMapSummary) {
-    manualMapSummary.textContent = `${state.manualPoints.length} AOI point(s) marked.`;
+  if (state.manualTool === "pen") {
+    state.manualDraft = { type: "pen", points: [point] };
+  } else {
+    state.manualDraft = { type: state.manualTool, start: point, end: point };
   }
+
+  window.addEventListener("pointermove", onManualMapPointerMove);
+  window.addEventListener("pointerup", onManualMapPointerUp);
+  renderManualMapGraphics();
+}
+
+function onManualMapPointerMove(event) {
+  if (!state.manualDraft) return;
+  const point = pointerEventToMapRatio(event);
+  if (!point) return;
+
+  if (state.manualDraft.type === "pen") {
+    state.manualDraft.points.push(point);
+  } else {
+    state.manualDraft.end = point;
+  }
+  renderManualMapGraphics();
+}
+
+function onManualMapPointerUp(event) {
+  if (!state.manualDraft) return;
+  const point = pointerEventToMapRatio(event);
+  if (point) {
+    if (state.manualDraft.type === "pen") {
+      state.manualDraft.points.push(point);
+    } else {
+      state.manualDraft.end = point;
+    }
+  }
+
+  const finalizedShape = finalizeManualDraft(state.manualDraft);
+  if (finalizedShape) {
+    state.manualShapes.push(finalizedShape);
+  }
+
+  state.manualDraft = null;
+  window.removeEventListener("pointermove", onManualMapPointerMove);
+  window.removeEventListener("pointerup", onManualMapPointerUp);
+  updateManualMapSummary();
+  renderManualMapGraphics();
   updateSystemCalculations();
 }
 
-function renderManualMapMarkers() {
-  if (!manualMap) return;
+function pointerEventToMapRatio(event) {
+  if (!manualMap) return null;
+  const rect = manualMap.getBoundingClientRect();
+  const xRatio = (event.clientX - rect.left) / rect.width;
+  const yRatio = (event.clientY - rect.top) / rect.height;
+  if (xRatio < 0 || xRatio > 1 || yRatio < 0 || yRatio > 1) return null;
+  return { x: xRatio, y: yRatio };
+}
 
-  manualMap.querySelectorAll(".map-marker").forEach((marker) => marker.remove());
-  state.manualPoints.forEach((point) => {
-    const marker = document.createElement("span");
-    marker.className = "map-marker";
-    marker.style.left = `${point.xRatio * 100}%`;
-    marker.style.top = `${point.yRatio * 100}%`;
-    manualMap.appendChild(marker);
+function finalizeManualDraft(draft) {
+  if (!draft) return null;
+
+  if (draft.type === "pen") {
+    if (!draft.points || draft.points.length < 2) return null;
+    return { type: "pen", points: [...draft.points] };
+  }
+
+  if (!draft.start || !draft.end) return null;
+  const dx = Math.abs(draft.end.x - draft.start.x);
+  const dy = Math.abs(draft.end.y - draft.start.y);
+  if (dx < 0.003 || dy < 0.003) return null;
+  return {
+    type: draft.type,
+    start: draft.start,
+    end: draft.end,
+  };
+}
+
+function renderManualMapGraphics() {
+  if (!manualMapOverlay) return;
+  manualMapOverlay.innerHTML = "";
+
+  state.manualShapes.forEach((shape) => {
+    const element = createShapeSvgElement(shape, false);
+    if (element) manualMapOverlay.appendChild(element);
   });
+
+  if (state.manualDraft) {
+    const preview = createShapeSvgElement(state.manualDraft, true);
+    if (preview) manualMapOverlay.appendChild(preview);
+  }
+
+  if (state.manualSearchMarker) {
+    const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    marker.setAttribute("class", "map-search-marker");
+    marker.setAttribute("cx", String(state.manualSearchMarker.x * 1000));
+    marker.setAttribute("cy", String(state.manualSearchMarker.y * 1000));
+    marker.setAttribute("r", "9");
+    manualMapOverlay.appendChild(marker);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("class", "map-search-label");
+    label.setAttribute("x", String(state.manualSearchMarker.x * 1000 + 14));
+    label.setAttribute("y", String(state.manualSearchMarker.y * 1000 - 8));
+    label.textContent = state.manualSearchMarker.label;
+    manualMapOverlay.appendChild(label);
+  }
+}
+
+function createShapeSvgElement(shape, isPreview) {
+  if (!shape) return null;
+
+  if (shape.type === "square") {
+    const x = Math.min(shape.start.x, shape.end.x) * 1000;
+    const y = Math.min(shape.start.y, shape.end.y) * 1000;
+    const width = Math.abs(shape.end.x - shape.start.x) * 1000;
+    const height = Math.abs(shape.end.y - shape.start.y) * 1000;
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", String(x));
+    rect.setAttribute("y", String(y));
+    rect.setAttribute("width", String(width));
+    rect.setAttribute("height", String(height));
+    rect.setAttribute("class", `map-shape${isPreview ? " preview" : ""}`);
+    return rect;
+  }
+
+  if (shape.type === "circle") {
+    const cx = shape.start.x * 1000;
+    const cy = shape.start.y * 1000;
+    const radius = Math.hypot(shape.end.x - shape.start.x, shape.end.y - shape.start.y) * 1000;
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", String(cx));
+    circle.setAttribute("cy", String(cy));
+    circle.setAttribute("r", String(radius));
+    circle.setAttribute("class", `map-shape${isPreview ? " preview" : ""}`);
+    return circle;
+  }
+
+  if (shape.type === "pen") {
+    const points = shape.points || [];
+    if (points.length < 2) return null;
+    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    polygon.setAttribute(
+      "points",
+      points.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" "),
+    );
+    polygon.setAttribute("class", `map-shape pen${isPreview ? " preview" : ""}`);
+    polygon.setAttribute("fill", "none");
+    return polygon;
+  }
+
+  return null;
+}
+
+function updateManualMapSummary() {
+  if (!manualMapSummary) return;
+
+  const totalShapes = state.manualShapes.length;
+  const squareCount = state.manualShapes.filter((shape) => shape.type === "square").length;
+  const circleCount = state.manualShapes.filter((shape) => shape.type === "circle").length;
+  const penCount = state.manualShapes.filter((shape) => shape.type === "pen").length;
+  const searchText = state.manualSearchMarker ? ` | Place: ${state.manualSearchMarker.fullLabel}` : "";
+
+  if (totalShapes === 0 && !state.manualSearchMarker) {
+    manualMapSummary.textContent = "Use the toolbar to draw AOI shapes on the map.";
+    return;
+  }
+
+  manualMapSummary.textContent = `Shapes: ${totalShapes} (square ${squareCount}, circle ${circleCount}, pen ${penCount})${searchText}`;
+}
+
+async function onManualSearchSubmit(event) {
+  event.preventDefault();
+  const query = manualMapSearchInput?.value?.trim();
+  if (!query) return;
+
+  if (manualMapSummary) {
+    manualMapSummary.textContent = `Searching for "${query}"...`;
+  }
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error(`Search request failed (${response.status})`);
+    const results = await response.json();
+    const first = results?.[0];
+    if (!first) {
+      state.manualSearchMarker = null;
+      if (manualMapSummary) {
+        manualMapSummary.textContent = `No result found for "${query}".`;
+      }
+      renderManualMapGraphics();
+      return;
+    }
+
+    const lon = Number(first.lon);
+    const lat = Number(first.lat);
+    state.manualSearchMarker = {
+      x: clamp((lon + 180) / 360, 0, 1),
+      y: clamp((90 - lat) / 180, 0, 1),
+      label: "Search hit",
+      fullLabel: first.display_name || query,
+    };
+    renderManualMapGraphics();
+    updateManualMapSummary();
+  } catch (error) {
+    state.manualSearchMarker = null;
+    if (manualMapSummary) {
+      manualMapSummary.textContent = `Search unavailable for "${query}".`;
+    }
+    renderManualMapGraphics();
+  }
+}
+
+function clearManualDrawings() {
+  state.manualShapes = [];
+  state.manualDraft = null;
+  renderManualMapGraphics();
+  updateManualMapSummary();
+  updateSystemCalculations();
+}
+
+function dismissManualFullscreenMap() {
+  state.manualOverlayDismissed = true;
+  updateAreaInputModeUI();
 }
 
 function onGeoJsonFileChange(event) {
@@ -768,7 +1070,7 @@ syncConditionalQuestionState();
 applyQuestionAnswerVisibility();
 renderConnectionList();
 refreshCardState();
-renderManualMapMarkers();
+renderManualMapGraphics();
 updateAreaInputModeUI();
 drawConnections();
 updateSystemCalculations();
