@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planet Credit Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>Planet Credit Calculator</h1>
+    </header>
+
+    <div class="app-layout" id="builder-page">
+      <aside class="calc-panel">
+        <h2>System Calculations</h2>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">Selected Primary Modes</p>
+          <p id="q1-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">Selected Question 2 Modes</p>
+          <p id="q2-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">Selected Asset Types</p>
+          <p id="q3-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">End Customer</p>
+          <p id="q4-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">Data Freshness Need</p>
+          <p id="q5-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">Area Definition Input</p>
+          <p id="q6-profile" class="panel-value">None</p>
+        </section>
+
+        <section class="panel-card" hidden>
+          <p class="panel-label">Connections</p>
+          <ul id="connection-list" class="connection-list">
+            <li class="muted">No connections yet.</li>
+          </ul>
+        </section>
+
+        <section class="panel-card">
+          <p class="panel-label">Estimated Planet Credits</p>
+          <div class="calc-breakdown">
+            <div class="calc-row">
+              <span>Total AOI (km²)</span>
+              <strong id="calc-aoi-km2">0</strong>
+            </div>
+            <div class="calc-row">
+              <span>Package Annual Price / km²</span>
+              <strong id="calc-package-price-km2">0</strong>
+            </div>
+            <div class="calc-row">
+              <span>Frequency (Observations/Yr)</span>
+              <strong id="calc-observations-year">0</strong>
+            </div>
+            <div class="calc-row">
+              <span>PC Action Multiplier (Latency)</span>
+              <strong id="calc-pc-multiplier">1.00</strong>
+            </div>
+            <div class="calc-row">
+              <span>Base Subscription Cost (PC)</span>
+              <strong id="calc-base-subscription">0</strong>
+            </div>
+            <div class="calc-row">
+              <span>Credit Consumption (PC)</span>
+              <strong id="calc-credit-consumption">0</strong>
+            </div>
+            <div class="calc-row">
+              <span>Data Activation Platform Fees (PC)</span>
+              <strong id="calc-activation-fees">0</strong>
+            </div>
+          </div>
+          <p id="credit-total" class="credit-total">0</p>
+          <div class="calc-breakdown">
+            <div class="calc-row">
+              <span>USD (Annual @ $0.015)</span>
+              <strong id="calc-usd-annual">$0.00</strong>
+            </div>
+            <div class="calc-row">
+              <span>USD (Monthly @ $0.01)</span>
+              <strong id="calc-usd-monthly">$0.00</strong>
+            </div>
+          </div>
+          <small id="calc-details" class="calc-details">
+            Total cost = Base Subscription + Planet Credit Consumption.
+          </small>
+        </section>
+
+        <button id="view-packages-button" class="clear-button" type="button">View Packages</button>
+      </aside>
+
+      <main class="canvas-panel">
+        <section class="canvas-header">
+          <h2>Decision Flow Workspace</h2>
+        </section>
+
+        <section class="flow-canvas" id="flow-canvas">
+          <svg id="flow-lines" aria-hidden="true"></svg>
+
+          <article class="question-block" data-question-id="q1">
+            <h3 class="question-title">What would you want to do?</h3>
+
+            <div class="card-grid">
+              <button
+                class="answer-card"
+                data-node-id="q1-sporadic"
+                data-question-id="q1"
+                data-label="Sporadically monitor different places"
+                data-summary="Global Roaming (Flexible Access)"
+                data-frequency="Flexible"
+                data-obs-per-year="26"
+                data-package-price-km2="2.8"
+                data-access-mode="flexible"
+                data-multiplier="1.2"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q1-A1</span>
+                <span class="card-copy">
+                  <strong>Sporadically monitor different places</strong>
+                  <small>Sets: Global Roaming (Flexible Access).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-event"
+                data-question-id="q1"
+                data-label="Check only a few images (Event)"
+                data-summary="Fixed AOI, Low Frequency (Hybrid lean)"
+                data-frequency="Low"
+                data-obs-per-year="12"
+                data-package-price-km2="1.6"
+                data-access-mode="fixed"
+                data-multiplier="1.05"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q1-A2</span>
+                <span class="card-copy">
+                  <strong>Check only a few images (Event)</strong>
+                  <small>Sets: Fixed AOI, Low Frequency (Hybrid lean).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-monthly"
+                data-question-id="q1"
+                data-label="Regular insights (Monthly-ish)"
+                data-summary="Fixed AOI, Medium Frequency"
+                data-frequency="Medium"
+                data-obs-per-year="26"
+                data-package-price-km2="2.1"
+                data-access-mode="fixed"
+                data-multiplier="1.3"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q1-A3</span>
+                <span class="card-copy">
+                  <strong>Regular insights (Monthly-ish)</strong>
+                  <small>Sets: Fixed AOI, Medium Frequency.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-daily"
+                data-question-id="q1"
+                data-label="Daily monitoring"
+                data-summary="Fixed AOI, High Frequency (Reserved lean)"
+                data-frequency="High"
+                data-obs-per-year="365"
+                data-package-price-km2="2.4"
+                data-access-mode="reserved"
+                data-multiplier="1.65"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q1-A4</span>
+                <span class="card-copy">
+                  <strong>Daily monitoring</strong>
+                  <small>Sets: Fixed AOI, High Frequency (Reserved lean).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q1-custom"
+                data-question-id="q1"
+                data-label="Other (Custom)"
+                data-summary="Fixed AOI, Custom Frequency"
+                data-frequency="Custom"
+                data-obs-per-year="104"
+                data-package-price-km2="2.2"
+                data-access-mode="fixed"
+                data-multiplier="1.4"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q1-A5</span>
+                <span class="card-copy">
+                  <strong>Other (Custom)</strong>
+                  <small>Sets: Fixed AOI, prompts for custom frequency.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block" data-question-id="q2">
+            <h3 class="question-title">
+              Are you planning to perform only visual analysis, or remote sensing methods requiring multi-spectral
+              data?
+            </h3>
+
+            <div class="card-grid q2-grid">
+              <button
+                class="answer-card"
+                data-node-id="q2-visual"
+                data-question-id="q2"
+                data-label="Visual analysis only"
+                data-summary="Basic visual inspection and interpretation"
+                data-analysis="Visual"
+                data-multiplier="1.0"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q2-A1</span>
+                <span class="card-copy">
+                  <strong>Visual analysis only</strong>
+                  <small>Basic visual inspection and interpretation.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q2-multi"
+                data-question-id="q2"
+                data-label="Multi-spectral remote sensing"
+                data-summary="Advanced analysis with spectral bands (NDVI, change detection, etc.)"
+                data-analysis="Multi-spectral"
+                data-multiplier="1.75"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q2-A2</span>
+                <span class="card-copy">
+                  <strong>Multi-spectral remote sensing</strong>
+                  <small>Advanced analysis requiring spectral bands (NDVI, change detection, etc.).</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block" data-question-id="q3">
+            <h3 class="question-title">What type of assets are at these locations?</h3>
+
+            <div class="card-grid">
+              <button
+                class="answer-card"
+                data-node-id="q3-agri-forestry"
+                data-question-id="q3"
+                data-label="Agriculture & Forestry"
+                data-summary="Routes to AUM"
+                data-asset-route="AUM"
+                data-multiplier="1.25"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q3-A1</span>
+                <span class="card-copy">
+                  <strong>Agriculture & Forestry</strong>
+                  <small>For daily, point-in-time scenes to monitor crop health - Routes to AUM.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q3-maritime-water"
+                data-question-id="q3"
+                data-label="Maritime & Open Water"
+                data-summary="Routes to Open Water"
+                data-asset-route="Open Water"
+                data-multiplier="1.45"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q3-A2</span>
+                <span class="card-copy">
+                  <strong>Maritime & Open Water</strong>
+                  <small>For tracking vessels or events in the open ocean - Routes to Open Water.</small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q3-mosaics"
+                data-question-id="q3"
+                data-label="Mosaics"
+                data-summary="Routes to Mosaics"
+                data-asset-route="Mosaics"
+                data-multiplier="1.6"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q3-A3</span>
+                <span class="card-copy">
+                  <strong>Mosaics</strong>
+                  <small>
+                    For clean, cloud-free, aggregated base layer over a large region
+                    (Weekly/Monthly/Quarterly) - Routes to Mosaics.
+                  </small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q3-general-monitoring"
+                data-question-id="q3"
+                data-label="General Point-in-Time Monitoring"
+                data-summary="Routes to Hybrid/Reserved"
+                data-asset-route="Hybrid/Reserved"
+                data-multiplier="1.32"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q3-A4</span>
+                <span class="card-copy">
+                  <strong>General Point-in-Time Monitoring</strong>
+                  <small>
+                    For individual, daily scenes of specific commercial or government sites - Routes to
+                    Hybrid/Reserved.
+                  </small>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block" id="q4-block" data-question-id="q4" hidden>
+            <h3 class="question-title">Who is the end customer?</h3>
+
+            <div class="card-grid q2-grid">
+              <button
+                class="answer-card"
+                data-node-id="q4-government"
+                data-question-id="q4"
+                data-label="Government"
+                data-summary="Government"
+                data-customer-type="Government"
+                data-multiplier="1.18"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q4-A1</span>
+                <span class="card-copy">
+                  <strong>Government</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q4-commercial"
+                data-question-id="q4"
+                data-label="Commercial"
+                data-summary="Commercial"
+                data-customer-type="Commercial"
+                data-multiplier="1.08"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q4-A2</span>
+                <span class="card-copy">
+                  <strong>Commercial</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block" data-question-id="q5">
+            <h3 class="question-title">Tell me about how fresh data does the customer need</h3>
+
+            <div class="card-grid">
+              <button
+                class="answer-card"
+                data-node-id="q5-over-30-days"
+                data-question-id="q5"
+                data-label=">30 Days"
+                data-summary=">30 Days"
+                data-freshness=">30 Days"
+                data-multiplier="0.86"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q5-A1</span>
+                <span class="card-copy">
+                  <strong>&gt;30 Days</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q5-6-30-days"
+                data-question-id="q5"
+                data-label="6-30 Days"
+                data-summary="6-30 Days"
+                data-freshness="6-30 Days"
+                data-multiplier="1.02"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q5-A2</span>
+                <span class="card-copy">
+                  <strong>6-30 Days</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q5-1-5-days"
+                data-question-id="q5"
+                data-label="1-5 Days"
+                data-summary="1-5 Days"
+                data-freshness="1-5 Days"
+                data-multiplier="1.22"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q5-A3</span>
+                <span class="card-copy">
+                  <strong>1-5 Days</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q5-next-day"
+                data-question-id="q5"
+                data-label="Next Day"
+                data-summary="Next Day"
+                data-freshness="Next Day"
+                data-multiplier="1.46"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon blue">Q5-A4</span>
+                <span class="card-copy">
+                  <strong>Next Day</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q5-same-day"
+                data-question-id="q5"
+                data-label="Same Day"
+                data-summary="Same Day"
+                data-freshness="Same Day"
+                data-multiplier="1.8"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q5-A5</span>
+                <span class="card-copy">
+                  <strong>Same Day</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+          </article>
+
+          <article class="question-block" data-question-id="q6">
+            <h3 class="question-title">Tell us about the areas you want to monitor</h3>
+
+            <div class="card-grid q2-grid">
+              <button
+                class="answer-card"
+                data-node-id="q6-manual-entry"
+                data-question-id="q6"
+                data-label="Manual entry"
+                data-summary="Manual entry"
+                data-area-input="manual"
+                data-multiplier="1.1"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon green">Q6-A1</span>
+                <span class="card-copy">
+                  <strong>Manual entry</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+
+              <button
+                class="answer-card"
+                data-node-id="q6-upload-geojson"
+                data-question-id="q6"
+                data-label="Upload GeoJSON"
+                data-summary="Upload GeoJSON"
+                data-area-input="geojson"
+                data-multiplier="1.0"
+              >
+                <span class="input-handle" aria-hidden="true"></span>
+                <span class="card-icon purple">Q6-A2</span>
+                <span class="card-copy">
+                  <strong>Upload GeoJSON</strong>
+                </span>
+                <span class="output-handle" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <section class="area-input-panel manual-entry-panel" id="manual-entry-panel" hidden>
+              <div class="map-toolbar">
+                <div class="tool-group">
+                  <button type="button" class="tool-button active" data-map-tool="square">Square</button>
+                  <button type="button" class="tool-button" data-map-tool="circle">Circle</button>
+                  <button type="button" class="tool-button" data-map-tool="pen">Pen</button>
+                </div>
+                <form id="manual-map-search-form" class="map-search-form">
+                  <input
+                    id="manual-map-search-input"
+                    type="search"
+                    placeholder="Search a place..."
+                    autocomplete="off"
+                  />
+                  <button type="submit" class="tool-button">Search</button>
+                </form>
+                <div class="tool-group">
+                  <button type="button" id="manual-map-clear" class="tool-button">Clear Drawings</button>
+                  <button type="button" id="manual-map-done" class="tool-button">Done</button>
+                </div>
+              </div>
+              <div id="manual-map" class="manual-map" aria-label="Manual entry map canvas">
+                <svg id="manual-map-overlay" class="manual-map-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+              </div>
+              <p id="manual-map-summary" class="input-summary">Use the toolbar to draw AOI shapes on the map.</p>
+            </section>
+
+            <section class="area-input-panel" id="geojson-upload-panel" hidden>
+              <h4>GeoJSON uploader</h4>
+              <label class="uploader-label" for="geojson-file-input">Choose GeoJSON file</label>
+              <input id="geojson-file-input" type="file" accept=".geojson,.json,application/geo+json,application/json" />
+              <p id="geojson-file-summary" class="input-summary">No file selected.</p>
+            </section>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <section class="packages-page" id="packages-page" hidden>
+      <div class="packages-header">
+        <div>
+          <h2>Package Comparison</h2>
+          <p>
+            This final page calculates costs for all packages simultaneously, giving the Rep a full view to handle
+            objections.
+          </p>
+        </div>
+        <button type="button" id="back-to-builder-button" class="tool-button">Back to Builder</button>
+      </div>
+
+      <div class="billing-toggle" role="tablist" aria-label="Billing period toggle">
+        <button type="button" id="billing-annual-button" class="toggle-button active">Annual Planet Credits</button>
+        <button type="button" id="billing-monthly-button" class="toggle-button">Monthly Planet Credits</button>
+      </div>
+
+      <section class="recommended-package-card" id="recommended-package-card">
+        <p class="panel-label">Top Recommendation</p>
+        <h3 id="recommended-package-name">No recommendation yet</h3>
+        <p id="system-logic-callout" class="system-logic-callout">
+          System Logic: recommendation appears after selections are made.
+        </p>
+
+        <div class="cost-driver-grid">
+          <div class="cost-driver-row">
+            <span>
+              Latency
+              <button
+                type="button"
+                class="info-icon"
+                title="Lower latency multiplies credit burn faster. Same Day has the highest multiplier."
+              >
+                ℹ️
+              </button>
+            </span>
+            <strong id="cost-driver-latency">-</strong>
+          </div>
+          <div class="cost-driver-row">
+            <span>
+              Analysis Type
+              <button
+                type="button"
+                class="info-icon"
+                title="Multi-spectral analysis uses advanced processing and increases total credit consumption."
+              >
+                ℹ️
+              </button>
+            </span>
+            <strong id="cost-driver-analysis">-</strong>
+          </div>
+        </div>
+
+        <div class="gauge-controls">
+          <label for="area-adjust-slider">Area Slider</label>
+          <input id="area-adjust-slider" type="range" min="50" max="200" step="5" value="100" />
+          <div class="gauge-value" id="area-adjust-value">100%</div>
+        </div>
+        <div class="gauge-controls">
+          <label for="latency-adjust-slider">Latency Slider</label>
+          <input id="latency-adjust-slider" type="range" min="50" max="200" step="5" value="100" />
+          <div class="gauge-value" id="latency-adjust-value">100%</div>
+        </div>
+
+        <div class="credit-gauge">
+          <div id="credit-gauge-fill" class="credit-gauge-fill"></div>
+        </div>
+        <p id="credit-gauge-label" class="input-summary">Credit Estimation Gauge: 0%</p>
+
+        <div class="recommended-stats">
+          <div>
+            <span>Total Planet Credits</span>
+            <strong id="recommended-total-credits">0</strong>
+          </div>
+          <div>
+            <span>Estimated USD Cost</span>
+            <strong id="recommended-usd-cost">$0.00</strong>
+          </div>
+        </div>
+        <p id="recommended-message" class="input-summary">Make selections to generate package recommendation.</p>
+      </section>
+
+      <section>
+        <h3 class="packages-subtitle">All Models</h3>
+        <div id="packages-accordion" class="packages-accordion"></div>
+      </section>
+    </section>
+    <script src="script.js"></script>
+  </body>
+</html>
