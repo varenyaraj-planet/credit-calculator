@@ -234,6 +234,81 @@ body {
   font-size: 1.35rem;
 }
 
+.system-logic-callout {
+  margin: 10px 0 0;
+  border: 1px solid #3e5781;
+  background: rgba(78, 168, 255, 0.12);
+  color: #cfe3ff;
+  border-radius: 10px;
+  padding: 10px;
+  line-height: 1.35;
+}
+
+.cost-driver-grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.cost-driver-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #cfe0fb;
+}
+
+.cost-driver-row strong {
+  font-size: 0.95rem;
+}
+
+.info-icon {
+  border: none;
+  background: transparent;
+  color: #b7cbeb;
+  cursor: help;
+  padding: 0;
+  margin-left: 3px;
+  font-size: 0.86rem;
+}
+
+.gauge-controls {
+  margin-top: 10px;
+  display: grid;
+  gap: 5px;
+}
+
+.gauge-controls label {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.gauge-controls input[type="range"] {
+  width: 100%;
+}
+
+.gauge-value {
+  font-size: 0.84rem;
+  color: #d7e4fa;
+}
+
+.credit-gauge {
+  margin-top: 10px;
+  height: 14px;
+  border-radius: 999px;
+  background: #1b2a44;
+  border: 1px solid #334f7d;
+  overflow: hidden;
+}
+
+.credit-gauge-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #76cf68 0%, #f0cc56 60%, #ea6262 100%);
+  transition: width 0.2s ease;
+}
+
 .recommended-stats {
   margin-top: 10px;
   display: grid;

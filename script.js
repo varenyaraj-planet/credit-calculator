@@ -11,6 +11,10 @@ const state = {
   geojsonFeatureCount: 0,
   billingMode: "annual",
   latestCalculationContext: null,
+  packageAdjustments: {
+    areaPercent: 100,
+    latencyPercent: 100,
+  },
 };
 
 const GENERAL_MONITORING_NODE_ID = "q3-general-monitoring";
@@ -72,6 +76,15 @@ const recommendedPackageName = document.getElementById("recommended-package-name
 const recommendedTotalCredits = document.getElementById("recommended-total-credits");
 const recommendedUsdCost = document.getElementById("recommended-usd-cost");
 const recommendedMessage = document.getElementById("recommended-message");
+const systemLogicCallout = document.getElementById("system-logic-callout");
+const costDriverLatency = document.getElementById("cost-driver-latency");
+const costDriverAnalysis = document.getElementById("cost-driver-analysis");
+const areaAdjustSlider = document.getElementById("area-adjust-slider");
+const latencyAdjustSlider = document.getElementById("latency-adjust-slider");
+const areaAdjustValue = document.getElementById("area-adjust-value");
+const latencyAdjustValue = document.getElementById("latency-adjust-value");
+const creditGaugeFill = document.getElementById("credit-gauge-fill");
+const creditGaugeLabel = document.getElementById("credit-gauge-label");
 const packagesAccordion = document.getElementById("packages-accordion");
 const q4Block = document.getElementById("q4-block");
 const q1Profile = document.getElementById("q1-profile");
@@ -160,6 +173,12 @@ if (billingAnnualButton) {
 }
 if (billingMonthlyButton) {
   billingMonthlyButton.addEventListener("click", () => setBillingMode("monthly"));
+}
+if (areaAdjustSlider) {
+  areaAdjustSlider.addEventListener("input", () => onPackageAdjustmentsChanged("area"));
+}
+if (latencyAdjustSlider) {
+  latencyAdjustSlider.addEventListener("input", () => onPackageAdjustmentsChanged("latency"));
 }
 window.addEventListener("resize", drawConnections);
 
@@ -618,6 +637,7 @@ function openPackagesPage() {
     packagesPage.hidden = false;
     packagesPage.style.display = "block";
   }
+  syncPackageAdjustmentControls();
   renderPackagesPage();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -634,6 +654,13 @@ function showBuilderPage() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function syncPackageAdjustmentControls() {
+  if (areaAdjustSlider) areaAdjustSlider.value = String(state.packageAdjustments.areaPercent);
+  if (latencyAdjustSlider) latencyAdjustSlider.value = String(state.packageAdjustments.latencyPercent);
+  if (areaAdjustValue) areaAdjustValue.textContent = `${state.packageAdjustments.areaPercent}%`;
+  if (latencyAdjustValue) latencyAdjustValue.textContent = `${state.packageAdjustments.latencyPercent}%`;
+}
+
 function setBillingMode(mode) {
   state.billingMode = mode === "monthly" ? "monthly" : "annual";
   if (billingAnnualButton) billingAnnualButton.classList.toggle("active", state.billingMode === "annual");
@@ -645,10 +672,42 @@ function renderPackagesPage() {
   const context = state.latestCalculationContext;
   if (!context || !packagesAccordion) return;
 
-  const packageEvaluations = evaluatePackageModels(context);
+  const adjustedContext = getAdjustedPackageContext(context);
+  const packageEvaluations = evaluatePackageModels(adjustedContext);
   const recommended = selectRecommendedPackage(packageEvaluations);
-  renderRecommendedPackageCard(recommended);
+  renderRecommendedPackageCard(recommended, adjustedContext);
   renderPackageAccordionItems(packageEvaluations, recommended?.id);
+  renderCreditGauge(adjustedContext);
+}
+
+function onPackageAdjustmentsChanged(kind) {
+  if (kind === "area" && areaAdjustSlider) {
+    state.packageAdjustments.areaPercent = Number(areaAdjustSlider.value || 100);
+  }
+  if (kind === "latency" && latencyAdjustSlider) {
+    state.packageAdjustments.latencyPercent = Number(latencyAdjustSlider.value || 100);
+  }
+
+  if (areaAdjustValue) areaAdjustValue.textContent = `${state.packageAdjustments.areaPercent}%`;
+  if (latencyAdjustValue) latencyAdjustValue.textContent = `${state.packageAdjustments.latencyPercent}%`;
+  renderPackagesPage();
+}
+
+function getAdjustedPackageContext(context) {
+  const areaFactor = (state.packageAdjustments.areaPercent || 100) / 100;
+  const latencyFactor = (state.packageAdjustments.latencyPercent || 100) / 100;
+  const adjustedActivationFees = context.dataActivationPlatformFees * areaFactor;
+  const adjustedBaseSubscription = context.baseSubscriptionCredits * areaFactor;
+  const adjustedConsumption = context.creditConsumptionCredits * areaFactor * latencyFactor;
+  return {
+    ...context,
+    totalAoiKm2: context.totalAoiKm2 * areaFactor,
+    baseSubscriptionCredits: adjustedBaseSubscription,
+    creditConsumptionCredits: adjustedConsumption,
+    dataActivationPlatformFees: adjustedActivationFees,
+    pcActionMultiplier: context.pcActionMultiplier * latencyFactor,
+    totalEstimatedCredits: adjustedBaseSubscription + adjustedConsumption + adjustedActivationFees,
+  };
 }
 
 function evaluatePackageModels(context) {
@@ -721,19 +780,32 @@ function selectRecommendedPackage(evaluations) {
   return fallback || evaluations[0] || null;
 }
 
-function renderRecommendedPackageCard(recommended) {
+function renderRecommendedPackageCard(recommended, context) {
   if (!recommendedPackageName || !recommendedTotalCredits || !recommendedUsdCost || !recommendedMessage) return;
   if (!recommended) {
     recommendedPackageName.textContent = "No recommendation yet";
     recommendedTotalCredits.textContent = "0";
     recommendedUsdCost.textContent = "$0.00";
     recommendedMessage.textContent = "Make selections to generate package recommendation.";
+    if (systemLogicCallout) systemLogicCallout.textContent = "System Logic: recommendation appears after selections are made.";
+    if (costDriverLatency) costDriverLatency.textContent = "-";
+    if (costDriverAnalysis) costDriverAnalysis.textContent = "-";
     return;
   }
 
   recommendedPackageName.textContent = recommended.name;
   recommendedTotalCredits.textContent = formatCredits(recommended.displayCredits);
   recommendedUsdCost.textContent = formatCurrency(recommended.displayUsd);
+  if (systemLogicCallout) systemLogicCallout.textContent = buildSystemLogicCallout(recommended, context);
+  if (costDriverLatency) {
+    costDriverLatency.textContent = `${freshnessLabelFromRank(context.selectedFreshnessRank)} × ${formatDecimal(
+      (state.packageAdjustments.latencyPercent || 100) / 100,
+      2,
+    )}`;
+  }
+  if (costDriverAnalysis) {
+    costDriverAnalysis.textContent = context.hasAdvancedToolsNeed ? "Multi-spectral (Advanced)" : "Visual only (Basic)";
+  }
 
   if (recommended.status === "recommended_candidate") {
     recommendedMessage.textContent = "Best fit from logic engine based on technical feasibility and pricing thresholds.";
@@ -741,6 +813,39 @@ function renderRecommendedPackageCard(recommended) {
   }
 
   recommendedMessage.textContent = recommended.objectionText || "Fallback package shown due to constraint limits.";
+}
+
+function buildSystemLogicCallout(recommended, context) {
+  const clauses = [];
+  if (context.observationsPerYear >= 300) {
+    clauses.push("the customer requires Daily Monitoring");
+  }
+  if (context.selectedFreshnessRank >= 4) {
+    clauses.push(`latency is set to ${freshnessLabelFromRank(context.selectedFreshnessRank)}`);
+  }
+  if (context.hasAdvancedToolsNeed) {
+    clauses.push("analysis type is Multi-spectral");
+  }
+  if (context.hasReservedAccess) {
+    clauses.push("Access Reserved removes activation platform fees");
+  }
+
+  const reason = clauses.length > 0 ? clauses.join(", ") : "the selected constraints and usage profile";
+  return `System Logic: Because ${reason}, ${recommended.name} provides the best unit economics and technical fit.`;
+}
+
+function renderCreditGauge(context) {
+  if (!creditGaugeFill || !creditGaugeLabel) return;
+
+  const gaugeMax = 1500000;
+  const percent = clamp((context.totalEstimatedCredits / gaugeMax) * 100, 0, 100);
+  creditGaugeFill.style.width = `${percent}%`;
+
+  let severity = "Low";
+  if (percent >= 70) severity = "High";
+  else if (percent >= 40) severity = "Medium";
+
+  creditGaugeLabel.textContent = `Credit Estimation Gauge: ${formatDecimal(percent, 1)}% (${severity} burn)`;
 }
 
 function renderPackageAccordionItems(evaluations, recommendedId) {
@@ -929,6 +1034,8 @@ function clearAll() {
   state.manualSearchMarker = null;
   state.manualOverlayDismissed = false;
   state.geojsonFeatureCount = 0;
+  state.packageAdjustments.areaPercent = 100;
+  state.packageAdjustments.latencyPercent = 100;
   if (geojsonFileInput) {
     geojsonFileInput.value = "";
   }
@@ -945,6 +1052,7 @@ function clearAll() {
   refreshCardState();
   renderManualMapGraphics();
   updateAreaInputModeUI();
+  syncPackageAdjustmentControls();
   drawConnections();
   updateSystemCalculations();
 }

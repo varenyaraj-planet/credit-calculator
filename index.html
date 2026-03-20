@@ -579,6 +579,55 @@
       <section class="recommended-package-card" id="recommended-package-card">
         <p class="panel-label">Top Recommendation</p>
         <h3 id="recommended-package-name">No recommendation yet</h3>
+        <p id="system-logic-callout" class="system-logic-callout">
+          System Logic: recommendation appears after selections are made.
+        </p>
+
+        <div class="cost-driver-grid">
+          <div class="cost-driver-row">
+            <span>
+              Latency
+              <button
+                type="button"
+                class="info-icon"
+                title="Lower latency multiplies credit burn faster. Same Day has the highest multiplier."
+              >
+                ℹ️
+              </button>
+            </span>
+            <strong id="cost-driver-latency">-</strong>
+          </div>
+          <div class="cost-driver-row">
+            <span>
+              Analysis Type
+              <button
+                type="button"
+                class="info-icon"
+                title="Multi-spectral analysis uses advanced processing and increases total credit consumption."
+              >
+                ℹ️
+              </button>
+            </span>
+            <strong id="cost-driver-analysis">-</strong>
+          </div>
+        </div>
+
+        <div class="gauge-controls">
+          <label for="area-adjust-slider">Area Slider</label>
+          <input id="area-adjust-slider" type="range" min="50" max="200" step="5" value="100" />
+          <div class="gauge-value" id="area-adjust-value">100%</div>
+        </div>
+        <div class="gauge-controls">
+          <label for="latency-adjust-slider">Latency Slider</label>
+          <input id="latency-adjust-slider" type="range" min="50" max="200" step="5" value="100" />
+          <div class="gauge-value" id="latency-adjust-value">100%</div>
+        </div>
+
+        <div class="credit-gauge">
+          <div id="credit-gauge-fill" class="credit-gauge-fill"></div>
+        </div>
+        <p id="credit-gauge-label" class="input-summary">Credit Estimation Gauge: 0%</p>
+
         <div class="recommended-stats">
           <div>
             <span>Total Planet Credits</span>
