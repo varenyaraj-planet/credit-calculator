@@ -9,14 +9,70 @@ const state = {
   manualSearchMarker: null,
   manualOverlayDismissed: false,
   geojsonFeatureCount: 0,
+  billingMode: "annual",
+  latestCalculationContext: null,
 };
 
 const GENERAL_MONITORING_NODE_ID = "q3-general-monitoring";
 const questionOrder = { q1: 1, q2: 2, q3: 3, q4: 4, q5: 5, q6: 6 };
+const annualUsdRate = 0.015;
+const monthlyUsdRate = 0.01;
+const packageModels = [
+  {
+    id: "lite",
+    name: "Lite Plan",
+    maxFreshnessRank: 2,
+    supportsReservedAccess: false,
+    minimumAcvUsd: 0,
+    licenseUseFactor: 0.74,
+    basicToolsFactor: 0.62,
+    advancedToolsFactor: 0.26,
+  },
+  {
+    id: "hybrid",
+    name: "Hybrid Plan",
+    maxFreshnessRank: 4,
+    supportsReservedAccess: false,
+    minimumAcvUsd: 120000,
+    licenseUseFactor: 0.92,
+    basicToolsFactor: 0.86,
+    advancedToolsFactor: 0.5,
+  },
+  {
+    id: "reserved",
+    name: "Reserved Plan",
+    maxFreshnessRank: 5,
+    supportsReservedAccess: true,
+    minimumAcvUsd: 250000,
+    licenseUseFactor: 1.0,
+    basicToolsFactor: 1.0,
+    advancedToolsFactor: 0.64,
+  },
+  {
+    id: "flexible-ultimate",
+    name: "Flexible Ultimate",
+    maxFreshnessRank: 5,
+    supportsReservedAccess: true,
+    minimumAcvUsd: 1000000,
+    licenseUseFactor: 1.16,
+    basicToolsFactor: 1.1,
+    advancedToolsFactor: 0.84,
+  },
+];
 const canvas = document.getElementById("flow-canvas");
 const svg = document.getElementById("flow-lines");
 const connectionList = document.getElementById("connection-list");
-const clearButton = document.getElementById("clear-button");
+const viewPackagesButton = document.getElementById("view-packages-button");
+const builderPage = document.getElementById("builder-page");
+const packagesPage = document.getElementById("packages-page");
+const backToBuilderButton = document.getElementById("back-to-builder-button");
+const billingAnnualButton = document.getElementById("billing-annual-button");
+const billingMonthlyButton = document.getElementById("billing-monthly-button");
+const recommendedPackageName = document.getElementById("recommended-package-name");
+const recommendedTotalCredits = document.getElementById("recommended-total-credits");
+const recommendedUsdCost = document.getElementById("recommended-usd-cost");
+const recommendedMessage = document.getElementById("recommended-message");
+const packagesAccordion = document.getElementById("packages-accordion");
 const q4Block = document.getElementById("q4-block");
 const q1Profile = document.getElementById("q1-profile");
 const q2Profile = document.getElementById("q2-profile");
@@ -93,7 +149,18 @@ if (geojsonFileInput) {
   geojsonFileInput.addEventListener("change", onGeoJsonFileChange);
 }
 
-clearButton.addEventListener("click", clearAll);
+if (viewPackagesButton) {
+  viewPackagesButton.addEventListener("click", openPackagesPage);
+}
+if (backToBuilderButton) {
+  backToBuilderButton.addEventListener("click", showBuilderPage);
+}
+if (billingAnnualButton) {
+  billingAnnualButton.addEventListener("click", () => setBillingMode("annual"));
+}
+if (billingMonthlyButton) {
+  billingMonthlyButton.addEventListener("click", () => setBillingMode("monthly"));
+}
 window.addEventListener("resize", drawConnections);
 
 function toggleCard(nodeId) {
@@ -475,6 +542,8 @@ function updateSystemCalculations() {
   const observationsPerYear = averageByDataset(q1Cards, "obsPerYear", 0);
   const pcActionMultiplier = resolveLatencyPcMultiplier(q5Cards);
   const hasReservedAccess = q1Cards.some((card) => card.dataset.accessMode === "reserved");
+  const selectedFreshnessRank = resolveFreshnessRank(q5Cards);
+  const hasAdvancedToolsNeed = q2Cards.some((card) => card.dataset.analysis === "Multi-spectral");
 
   const baseSubscriptionCredits = totalAoiKm2 * packageAnnualPricePerKm2;
   const creditConsumptionCredits = totalAoiKm2 * observationsPerYear * pcActionMultiplier;
@@ -503,6 +572,224 @@ function updateSystemCalculations() {
     " Updates live while selections and connections change." +
     " USD conversion uses Total Estimated Credits × $0.015 (Annual) or × $0.01 (Monthly)." +
     reservedNote;
+
+  state.latestCalculationContext = {
+    totalAoiKm2,
+    packageAnnualPricePerKm2,
+    observationsPerYear,
+    pcActionMultiplier,
+    baseSubscriptionCredits,
+    creditConsumptionCredits,
+    dataActivationPlatformFees,
+    totalEstimatedCredits,
+    annualUsd,
+    monthlyUsd,
+    hasReservedAccess,
+    selectedFreshnessRank,
+    hasAdvancedToolsNeed,
+  };
+
+  if (packagesPage && !packagesPage.hidden) {
+    renderPackagesPage();
+  }
+}
+
+function resolveFreshnessRank(q5Cards) {
+  if (q5Cards.length === 0) return 1;
+  return Math.max(
+    ...q5Cards.map((card) => {
+      const freshness = card.dataset.freshness || "";
+      if (freshness === ">30 Days") return 1;
+      if (freshness === "6-30 Days") return 2;
+      if (freshness === "1-5 Days") return 3;
+      if (freshness === "Next Day") return 4;
+      if (freshness === "Same Day") return 5;
+      return 1;
+    }),
+  );
+}
+
+function openPackagesPage() {
+  if (builderPage) builderPage.hidden = true;
+  if (packagesPage) packagesPage.hidden = false;
+  renderPackagesPage();
+}
+
+function showBuilderPage() {
+  if (packagesPage) packagesPage.hidden = true;
+  if (builderPage) builderPage.hidden = false;
+}
+
+function setBillingMode(mode) {
+  state.billingMode = mode === "monthly" ? "monthly" : "annual";
+  if (billingAnnualButton) billingAnnualButton.classList.toggle("active", state.billingMode === "annual");
+  if (billingMonthlyButton) billingMonthlyButton.classList.toggle("active", state.billingMode === "monthly");
+  renderPackagesPage();
+}
+
+function renderPackagesPage() {
+  const context = state.latestCalculationContext;
+  if (!context || !packagesAccordion) return;
+
+  const packageEvaluations = evaluatePackageModels(context);
+  const recommended = selectRecommendedPackage(packageEvaluations);
+  renderRecommendedPackageCard(recommended);
+  renderPackageAccordionItems(packageEvaluations, recommended?.id);
+}
+
+function evaluatePackageModels(context) {
+  const billingDivisor = state.billingMode === "monthly" ? 12 : 1;
+  const usdRate = state.billingMode === "monthly" ? monthlyUsdRate : annualUsdRate;
+
+  return packageModels.map((model) => {
+    const latencyBlocked = context.selectedFreshnessRank > model.maxFreshnessRank;
+    const reservedBlocked = context.hasReservedAccess && !model.supportsReservedAccess;
+    const technicallyAvailable = !latencyBlocked && !reservedBlocked;
+
+    const advancedBoost = context.hasAdvancedToolsNeed ? 1.18 : 1;
+    const licenseUseCreditsAnnual = context.baseSubscriptionCredits * model.licenseUseFactor;
+    const basicToolsCreditsAnnual = context.creditConsumptionCredits * model.basicToolsFactor;
+    const advancedToolsCreditsAnnual = context.creditConsumptionCredits * model.advancedToolsFactor * advancedBoost;
+    const activationFeesAnnual = context.dataActivationPlatformFees;
+    const totalCreditsAnnual =
+      licenseUseCreditsAnnual + basicToolsCreditsAnnual + advancedToolsCreditsAnnual + activationFeesAnnual;
+
+    const displayCredits = totalCreditsAnnual / billingDivisor;
+    const displayUsd = displayCredits * usdRate;
+    const annualUsd = totalCreditsAnnual * annualUsdRate;
+
+    let status = "recommended_candidate";
+    let objectionText = "";
+
+    if (!technicallyAvailable) {
+      status = "not_available";
+      if (latencyBlocked) {
+        const selectedFreshnessLabel = freshnessLabelFromRank(context.selectedFreshnessRank);
+        objectionText = `Disabled: ${model.name} does not support ${selectedFreshnessLabel} latency.`;
+      } else if (reservedBlocked) {
+        objectionText = `Disabled: ${model.name} does not support Access Reserved workflows.`;
+      } else {
+        objectionText = `Disabled: ${model.name} is not technically available for this scenario.`;
+      }
+    } else if (annualUsd < model.minimumAcvUsd) {
+      status = "below_minimum_price";
+      objectionText = `Fits technically, but below required minimum ACV of ${formatAcvShort(model.minimumAcvUsd)}.`;
+      if (model.minimumAcvUsd >= 1000000) {
+        objectionText = `Disabled: ${model.name} requires a minimum ACV of ${formatAcvShort(model.minimumAcvUsd)}.`;
+      }
+    }
+
+    return {
+      ...model,
+      status,
+      objectionText,
+      displayCredits,
+      displayUsd,
+      annualUsd,
+      licenseUseCreditsAnnual,
+      basicToolsCreditsAnnual,
+      advancedToolsCreditsAnnual,
+      activationFeesAnnual,
+      totalCreditsAnnual,
+      billingDivisor,
+      usdRate,
+    };
+  });
+}
+
+function selectRecommendedPackage(evaluations) {
+  const eligible = evaluations
+    .filter((item) => item.status === "recommended_candidate")
+    .sort((a, b) => a.annualUsd - b.annualUsd);
+  if (eligible.length > 0) return eligible[0];
+
+  const fallback = evaluations.find((item) => item.status === "below_minimum_price");
+  return fallback || evaluations[0] || null;
+}
+
+function renderRecommendedPackageCard(recommended) {
+  if (!recommendedPackageName || !recommendedTotalCredits || !recommendedUsdCost || !recommendedMessage) return;
+  if (!recommended) {
+    recommendedPackageName.textContent = "No recommendation yet";
+    recommendedTotalCredits.textContent = "0";
+    recommendedUsdCost.textContent = "$0.00";
+    recommendedMessage.textContent = "Make selections to generate package recommendation.";
+    return;
+  }
+
+  recommendedPackageName.textContent = recommended.name;
+  recommendedTotalCredits.textContent = formatCredits(recommended.displayCredits);
+  recommendedUsdCost.textContent = formatCurrency(recommended.displayUsd);
+
+  if (recommended.status === "recommended_candidate") {
+    recommendedMessage.textContent = "Best fit from logic engine based on technical feasibility and pricing thresholds.";
+    return;
+  }
+
+  recommendedMessage.textContent = recommended.objectionText || "Fallback package shown due to constraint limits.";
+}
+
+function renderPackageAccordionItems(evaluations, recommendedId) {
+  if (!packagesAccordion) return;
+  packagesAccordion.innerHTML = "";
+
+  evaluations.forEach((item) => {
+    const details = document.createElement("details");
+    details.className = "package-item";
+    if (item.id === recommendedId) details.open = true;
+
+    const tag = buildPackageTag(item, item.id === recommendedId);
+    const note = item.objectionText ? `<div class="package-summary-line">${item.objectionText}</div>` : "";
+
+    details.innerHTML = `
+      <summary>
+        <div class="package-summary-top">
+          <strong>${item.name}</strong>
+          ${tag}
+        </div>
+        <div class="package-summary-line">
+          ${formatCredits(item.displayCredits)} credits • ${formatCurrency(item.displayUsd)}
+        </div>
+        ${note}
+      </summary>
+      <div class="package-content">
+        <div class="calc-row"><span>License Use</span><strong>${formatCredits(item.licenseUseCreditsAnnual / item.billingDivisor)} credits</strong></div>
+        <div class="calc-row"><span>Basic Tools</span><strong>${formatCredits(item.basicToolsCreditsAnnual / item.billingDivisor)} credits</strong></div>
+        <div class="calc-row"><span>Advanced Tools</span><strong>${formatCredits(item.advancedToolsCreditsAnnual / item.billingDivisor)} credits</strong></div>
+        <div class="calc-row"><span>Data Activation Fees</span><strong>${formatCredits(item.activationFeesAnnual / item.billingDivisor)} credits</strong></div>
+        <div class="calc-row"><span>Total</span><strong>${formatCredits(item.displayCredits)} credits</strong></div>
+      </div>
+    `;
+    packagesAccordion.appendChild(details);
+  });
+}
+
+function buildPackageTag(item, isRecommended) {
+  if (isRecommended && item.status === "recommended_candidate") {
+    return '<span class="tag tag-recommended">🔵 RECOMMENDED</span>';
+  }
+
+  if (item.status === "below_minimum_price") {
+    return '<span class="tag tag-below-minimum">🟡 BELOW MINIMUM PRICE</span>';
+  }
+
+  if (item.status === "not_available") {
+    return '<span class="tag tag-not-available">🔴 NOT AVAILABLE</span>';
+  }
+
+  if (isRecommended) {
+    return '<span class="tag tag-recommended">🔵 RECOMMENDED</span>';
+  }
+
+  return '<span class="tag tag-recommended">AVAILABLE</span>';
+}
+
+function freshnessLabelFromRank(rank) {
+  if (rank === 5) return "Same Day";
+  if (rank === 4) return "Next Day";
+  if (rank === 3) return "1-5 Days";
+  if (rank === 2) return "6-30 Days";
+  return ">30 Days";
 }
 
 function averageByDataset(cardsSubset, datasetKey, fallbackValue = 0) {
@@ -596,6 +883,13 @@ function formatDecimal(value, digits = 2) {
 function formatCurrency(value) {
   if (!Number.isFinite(value)) return "$0.00";
   return `$${value.toFixed(2)}`;
+}
+
+function formatAcvShort(value) {
+  if (!Number.isFinite(value)) return "$0";
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}K`;
+  return `$${Math.round(value)}`;
 }
 
 function clamp(value, min, max) {

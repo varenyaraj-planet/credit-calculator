@@ -11,7 +11,7 @@
       <h1>Planet Credit Calculator</h1>
     </header>
 
-    <div class="app-layout">
+    <div class="app-layout" id="builder-page">
       <aside class="calc-panel">
         <h2>System Calculations</h2>
 
@@ -100,7 +100,7 @@
           </small>
         </section>
 
-        <button id="clear-button" class="clear-button">Clear selections & links</button>
+        <button id="view-packages-button" class="clear-button">View Packages</button>
       </aside>
 
       <main class="canvas-panel">
@@ -558,6 +558,45 @@
         </section>
       </main>
     </div>
+
+    <section class="packages-page" id="packages-page" hidden>
+      <div class="packages-header">
+        <div>
+          <h2>Package Comparison</h2>
+          <p>
+            This final page calculates costs for all packages simultaneously, giving the Rep a full view to handle
+            objections.
+          </p>
+        </div>
+        <button type="button" id="back-to-builder-button" class="tool-button">Back to Builder</button>
+      </div>
+
+      <div class="billing-toggle" role="tablist" aria-label="Billing period toggle">
+        <button type="button" id="billing-annual-button" class="toggle-button active">Annual Planet Credits</button>
+        <button type="button" id="billing-monthly-button" class="toggle-button">Monthly Planet Credits</button>
+      </div>
+
+      <section class="recommended-package-card" id="recommended-package-card">
+        <p class="panel-label">Top Recommendation</p>
+        <h3 id="recommended-package-name">No recommendation yet</h3>
+        <div class="recommended-stats">
+          <div>
+            <span>Total Planet Credits</span>
+            <strong id="recommended-total-credits">0</strong>
+          </div>
+          <div>
+            <span>Estimated USD Cost</span>
+            <strong id="recommended-usd-cost">$0.00</strong>
+          </div>
+        </div>
+        <p id="recommended-message" class="input-summary">Make selections to generate package recommendation.</p>
+      </section>
+
+      <section>
+        <h3 class="packages-subtitle">All Models</h3>
+        <div id="packages-accordion" class="packages-accordion"></div>
+      </section>
+    </section>
     <script src="script.js"></script>
   </body>
 </html>
