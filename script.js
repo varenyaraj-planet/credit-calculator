@@ -610,14 +610,28 @@ function resolveFreshnessRank(q5Cards) {
 }
 
 function openPackagesPage() {
-  if (builderPage) builderPage.hidden = true;
-  if (packagesPage) packagesPage.hidden = false;
+  if (builderPage) {
+    builderPage.hidden = true;
+    builderPage.style.display = "none";
+  }
+  if (packagesPage) {
+    packagesPage.hidden = false;
+    packagesPage.style.display = "block";
+  }
   renderPackagesPage();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function showBuilderPage() {
-  if (packagesPage) packagesPage.hidden = true;
-  if (builderPage) builderPage.hidden = false;
+  if (packagesPage) {
+    packagesPage.hidden = true;
+    packagesPage.style.display = "none";
+  }
+  if (builderPage) {
+    builderPage.hidden = false;
+    builderPage.style.display = "";
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function setBillingMode(mode) {
